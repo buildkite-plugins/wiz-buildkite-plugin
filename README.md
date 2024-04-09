@@ -66,7 +66,7 @@ steps:
           parameter-files: 'variables.tf'
 ```
 
-By default, `file-path` will be the root of your repository, and scan all Terraform files in the directory.
+By default, `path` parameter will be the root of your repository, and scan all Terraform files in the directory.
 To change the directory, add the following to your `pipeline.yml`, the plugin will scan the chosen directory.
 
 ```yaml
@@ -78,7 +78,7 @@ steps:
       - wiz#v1.2.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
-          path: 'my-terraform-files'
+          path: 'my-terraform-dir'
 ```
 
 ### Terraform Plan Scanning
