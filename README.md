@@ -61,6 +61,7 @@ steps:
     plugins:
       - wiz#v1.2.0:
           scan-type: 'iac'
+          iac-type: 'Terraform'
           path: 'main.tf'
           parameter-files: 'variables.tf'
 ```
