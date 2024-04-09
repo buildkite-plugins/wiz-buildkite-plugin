@@ -115,7 +115,7 @@ Used when `scan-type` is `iac`.
 
 ### `image-address` (Optional, string)
 
-The path to image file, if the `scan-type` is `docker`
+The path to image file, if the `scan-type` is `docker`.
 
 ### `parameter-files` (Optional, string)
 
@@ -124,8 +124,8 @@ Used when `scan-type` is `iac`.
 
 ### `path` (Optional, string)
 
-The file or directory to scan, defaults to the root directory of repository..
-Used when `scan-type` is `iac`
+The file or directory to scan, defaults to the root directory of repository.
+Used when `scan-type` is `iac`.
 
 ## Developing
 
