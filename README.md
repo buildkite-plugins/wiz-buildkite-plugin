@@ -30,7 +30,7 @@ If you are using the [AWS Assume Role Plugin](https://github.com/cultureamp/aws-
         scan-type: 'docker'
 ```
 
-### IaC (Infrastructure-as-Code) Cloudformation Scanning
+### AWS `cdk diff` Scanning
 
 To avoid adding build time overhead, you can add IaC scanning to your `cdk diff` step. You will need to mount/export the `cdk.out` folder and pass its path to the plugin. The plugin will then scan each Cloudformation stack in the folder and create a buildkite annotation with the results.
 
