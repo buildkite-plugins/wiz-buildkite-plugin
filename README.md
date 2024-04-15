@@ -60,12 +60,13 @@ steps:
     - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.2.0:
-          scan-type: 'terraform-files'
-          file-path: 'main.tf'
+          scan-type: 'iac'
+          iac-type: 'Terraform'
+          path: 'main.tf'
           parameter-files: 'variables.tf'
 ```
 
-By default, `file-path` will be the root of your repository, and scan all Terraform files in the directory.
+By default, `path` parameter will be the root of your repository, and scan all Terraform files in the directory.
 To change the directory, add the following to your `pipeline.yml`, the plugin will scan the chosen directory.
 
 ```yaml
@@ -75,8 +76,9 @@ steps:
     - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.2.0:
-          scan-type: 'terraform-files'
-          file-path: 'my-terraform-files'
+          scan-type: 'iac'
+          iac-type: 'Terraform'
+          path: 'my-terraform-dir'
 ```
 
 ### Terraform Plan Scanning
@@ -91,8 +93,9 @@ steps:
     - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.2.0:
-          scan-type: 'terraform-plan'
-          file-path: 'plan.tfplanjson'
+          scan-type: 'iac'
+          iac-type: 'Terraform'
+          path: 'plan.tfplanjson'
 ```
 
 ## Configuration
@@ -101,27 +104,28 @@ steps:
 
 The environment variable that the Wiz API Secret is stored in. Defaults to using `WIZ_API_SECRET`. Refer to the [documentation](https://buildkite.com/docs/pipelines/secrets#using-a-secrets-storage-service) for more information about managing secrets on your Buildkite agents.
 
-### `file-path` (Optional, string)
-
-The file or directory to scan, defaults to the root directory of repository.
-Used when `scan-type` is `terraform-files` and `terraform-plan`.
-
-### `scan-type` (Required, string) : 'docker | iac | terraform-files | terraform-plan'
+### `scan-type` (Required, string) : 'docker | iac'
 
 The type of resource to be scanned.
 
+### `iac-type` (Optional, string): `Ansible | AzureResourceManager | Cloudformation | Dockerfile | GoogleCloudDeploymentManager | Kubernetes | Terraform`
+
+Narrow down the scan to specific type.
+Used when `scan-type` is `iac`.
+
 ### `image-address` (Optional, string)
 
-The path to image file, if the `scan-type` is `docker`
+The path to image file, if the `scan-type` is `docker`.
 
 ### `parameter-files` (Optional, string)
 
 Comma separated list of globs of external parameter files to include while scanning e.g., `variables.tf`
-Used when `scan-type` is `terraform-files`.
+Used when `scan-type` is `iac`.
 
 ### `path` (Optional, string)
 
-The path to `cdk.out` folder containing CloudFormation stack(s), if the `scan-type` is `iac`
+The file or directory to scan, defaults to the root directory of repository.
+Used when `scan-type` is `iac`.
 
 ## Developing
 
