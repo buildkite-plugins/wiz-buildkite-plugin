@@ -49,6 +49,25 @@ steps:
           path: "infrastructure/cdk.out"
 ```
 
+### CloudFormation templates Scanning
+
+Add the following to your `pipeline.yml`, the plugin will scan a specific CloudFormation template and related Parameter file.
+
+```yaml
+steps:
+  - label: "Scan CloudFormation template file"
+    env:
+    - WIZ_API_ID: "<your-id-goes-here>"
+    plugins:
+      - wiz#v1.2.0:
+          scan-type: 'iac'
+          iac-type: 'Cloudformation'
+          path: 'cf-template.yaml'
+          parameter-files: 'params.json'
+```
+
+This can also be used to scan CloudFormation templates that have been synthesized via the AWS CDK e.g., `cdk synth > example.yaml`
+
 ### Terraform Files Scanning
 
 Add the following to your `pipeline.yml`, the plugin will scan a specific Terraform File and related Parameter file.
