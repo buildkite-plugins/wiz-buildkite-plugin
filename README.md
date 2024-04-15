@@ -30,7 +30,7 @@ If you are using the [AWS Assume Role Plugin](https://github.com/cultureamp/aws-
         scan-type: 'docker'
 ```
 
-### IaC (Infrastructure-as-Code) Cloudformation Scanning
+### AWS `cdk diff` Scanning
 
 To avoid adding build time overhead, you can add IaC scanning to your `cdk diff` step. You will need to mount/export the `cdk.out` folder and pass its path to the plugin. The plugin will then scan each Cloudformation stack in the folder and create a buildkite annotation with the results.
 
@@ -48,6 +48,25 @@ steps:
           scan-type: 'iac'
           path: "infrastructure/cdk.out"
 ```
+
+### CloudFormation templates Scanning
+
+Add the following to your `pipeline.yml`, the plugin will scan a specific CloudFormation template and related Parameter file.
+
+```yaml
+steps:
+  - label: "Scan CloudFormation template file"
+    env:
+    - WIZ_API_ID: "<your-id-goes-here>"
+    plugins:
+      - wiz#v1.2.0:
+          scan-type: 'iac'
+          iac-type: 'Cloudformation'
+          path: 'cf-template.yaml'
+          parameter-files: 'params.json'
+```
+
+This can also be used to scan CloudFormation templates that have been synthesized via the AWS CDK e.g., `cdk synth > example.yaml`
 
 ### Terraform Files Scanning
 
