@@ -1,6 +1,6 @@
 # Wiz Buildkite Plugin
 
-![Wiz logo image](https://github.com/buildkite-plugins/wiz-buildkite-plugin/blob/add-wiz-logo/wiz-logo.png)
+![Wiz logo image](https://github.com/buildkite-plugins/wiz-buildkite-plugin/blob/main/wiz-logo.png)
 
 Scans your infrastructure-as-code Cloudformation stacks or docker images for security vulnerabilities using [wiz](https://www.wiz.io/)
 
