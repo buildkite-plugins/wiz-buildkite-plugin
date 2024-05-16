@@ -40,7 +40,7 @@ setupWiz() {
     echo "Setting up and authenticating wiz"
     mkdir -p "$WIZ_DIR"
     docker run \
-        -it \
+        --rm -it \
         --mount type=bind,src="${WIZ_DIR}",dst=/cli \
         wiziocli.azurecr.io/wizcli:latest-arm64 \
         auth --id="${WIZ_API_ID}" --secret="${!api_secret_var}"
