@@ -109,7 +109,7 @@ iacScan() {
         --rm -it \
         --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
-        wiziocli.azurecr.io/wizcli:latest-amd64 \
+        wiziocli.azurecr.io/wizcli:latest-arm64 \
         iac scan \
         -f human \
         -o /scan/result/output,human \
