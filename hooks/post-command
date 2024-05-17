@@ -35,6 +35,24 @@ if [[ -n "${PARAMETER_FILES}" ]]; then
     args+=("--parameter-files ${PARAMETER_FILES}")
 fi
 
+# Get the architecture of the machine for running the container image due to "latest" not being multi-architecture
+
+architecture=$(uname -m)
+container_image_tag="latest"
+
+case $architecture in
+x86_64)
+    container_image_tag+="-amd64"
+    ;;
+arm64 | aarch64)
+    container_image_tag+="-arm64"
+    ;;
+*) ;;
+esac
+
+wiz_cli_container_repository="wiziocli.azurecr.io/wizcli"
+wiz_cli_container="${wiz_cli_container_repository}:${container_image_tag}"
+
 #TODO move this to agent-startup so all agents have wiz setup to save time, possibly directly as cli
 setupWiz() {
     echo "Setting up and authenticating wiz"
@@ -42,7 +60,7 @@ setupWiz() {
     docker run \
         --rm -it \
         --mount type=bind,src="${WIZ_DIR}",dst=/cli \
-        wiziocli.azurecr.io/wizcli:latest-arm64 \
+        "${wiz_cli_container}" \
         auth --id="${WIZ_API_ID}" --secret="${!api_secret_var}"
     # check that wiz-auth work expected, and a file in WIZ_DIR is created
     if [ -z "$(ls -A "${WIZ_DIR}")" ]; then
@@ -83,7 +101,7 @@ dockerImageScan() {
         --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly \
-        wiziocli.azurecr.io/wizcli:latest-arm64 \
+        "${wiz_cli_container}" \
         docker scan --image "$IMAGE" \
         --policy-hits-only \
         -f human \
@@ -109,7 +127,7 @@ iacScan() {
         --rm -it \
         --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
-        wiziocli.azurecr.io/wizcli:latest-arm64 \
+        "${wiz_cli_container}" \
         iac scan \
         -f human \
         -o /scan/result/output,human \
