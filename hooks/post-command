@@ -36,6 +36,8 @@ if [[ -n "${PARAMETER_FILES}" ]]; then
 fi
 
 # Get the architecture of the machine for running the container image due to "latest" not being multi-architecture
+# Available images: `latest`, `latest-amd64` and `latest-arm64`
+# therefore default case will use `latest`
 
 architecture=$(uname -m)
 container_image_tag="latest"
