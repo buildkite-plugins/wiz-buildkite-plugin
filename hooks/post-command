@@ -41,11 +41,11 @@ setupWiz() {
     mkdir -p "$WIZ_DIR"
     docker run \
         --rm -it \
-        --mount type=bind,src="$WIZ_DIR",dst=/cli \
-        wiziocli.azurecr.io/wizcli:latest-amd64 \
-        auth --id="$WIZ_API_ID" --secret "$api_secret_var"
+        --mount type=bind,src="${WIZ_DIR}",dst=/cli \
+        wiziocli.azurecr.io/wizcli:latest-arm64 \
+        auth --id="${WIZ_API_ID}" --secret="${!api_secret_var}"
     # check that wiz-auth work expected, and a file in WIZ_DIR is created
-    if [ -z "$(ls -A "$WIZ_DIR")" ]; then
+    if [ -z "$(ls -A "${WIZ_DIR}")" ]; then
         echo "Wiz authentication failed, please confirm that credentials are set for WIZ_API_ID and WIZ_API_SECRET"
         exit 1
     else
@@ -83,7 +83,7 @@ dockerImageScan() {
         --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly \
-        wiziocli.azurecr.io/wizcli:latest-amd64 \
+        wiziocli.azurecr.io/wizcli:latest-arm64 \
         docker scan --image "$IMAGE" \
         --policy-hits-only \
         -f human \
@@ -109,7 +109,7 @@ iacScan() {
         --rm -it \
         --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
-        wiziocli.azurecr.io/wizcli:latest-amd64 \
+        wiziocli.azurecr.io/wizcli:latest-arm64 \
         iac scan \
         -f human \
         -o /scan/result/output,human \
