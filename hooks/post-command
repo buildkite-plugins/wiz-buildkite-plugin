@@ -28,11 +28,11 @@ if [[ -z "${!api_secret_var:-}" ]]; then
 fi
 
 if [[ -n "${IAC_TYPE}" ]]; then
-    args+=("--types ${IAC_TYPE}")
+    args+=("--types=${IAC_TYPE}")
 fi
 
 if [[ -n "${PARAMETER_FILES}" ]]; then
-    args+=("--parameter-files ${PARAMETER_FILES}")
+    args+=("--parameter-files=${PARAMETER_FILES}")
 fi
 
 # Get the architecture of the machine for running the container image due to "latest" not being multi-architecture
