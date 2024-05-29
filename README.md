@@ -58,6 +58,7 @@ Add the following to your `pipeline.yml`, the plugin will scan a specific CloudF
 ```yaml
 steps:
   - label: "Scan CloudFormation template file"
+    command: ls
     env:
     - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
@@ -77,6 +78,7 @@ Add the following to your `pipeline.yml`, the plugin will scan a specific Terraf
 ```yaml
 steps:
   - label: "Scan Terraform File"
+    command: ls *.tf
     env:
     - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
@@ -93,6 +95,7 @@ To change the directory, add the following to your `pipeline.yml`, the plugin wi
 ```yaml
 steps:
   - label: "Scan Terraform Files in Directory"
+    command: ls my-terraform-dir/*.tf
     env:
     - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
