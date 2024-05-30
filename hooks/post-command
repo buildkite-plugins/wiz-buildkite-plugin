@@ -35,6 +35,14 @@ if [[ -n "${PARAMETER_FILES}" ]]; then
     args+=("--parameter-files=${PARAMETER_FILES}")
 fi
 
+# check if the args array is not empty and expand parameters into string
+# else use an empty string, to avoid 'unbound variable' on expansion of arrays if empty
+
+cmd_args=""
+if [[ "${#args[@]}" -ne 0 ]]; then
+    cmd_args+="${args[*]}"
+fi
+
 # Get the architecture of the machine for running the container image due to "latest" not being multi-architecture
 # Available images: `latest`, `latest-amd64` and `latest-arm64`
 # therefore default case will use `latest`
@@ -134,7 +142,7 @@ iacScan() {
         -f human \
         -o /scan/result/output,human \
         --name "$BUILDKITE_JOB_ID" \
-        --path "/scan/$FILE_PATH" "${args[@]}"
+        --path "/scan/$FILE_PATH" "${cmd_args}"
 
     exit_code="$?"
     case $exit_code in
