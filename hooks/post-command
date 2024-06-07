@@ -165,4 +165,8 @@ docker)
     setupWiz
     dockerImageScan
     ;;
+dir)
+    setupWiz
+    dirScan
+    ;;
 esac
