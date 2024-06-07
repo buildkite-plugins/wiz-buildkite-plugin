@@ -11,7 +11,7 @@ OUTPUT_FORMAT="${BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT:=human}"
 SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
 
 if [[ -z "${SCAN_TYPE}" ]]; then
-    echo "Missing scan type. Possible values: 'iac', 'docker'"
+    echo "+++ 🚨 Missing scan type. Possible values: 'iac', 'docker', 'dir'"
     exit 1
 fi
 
