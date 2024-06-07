@@ -122,6 +122,37 @@ steps:
           path: 'plan.tfplanjson'
 ```
 
+### Directory Scanning
+
+Add the following to your `pipeline.yml`, the plugin will scan a directory.
+
+```yaml
+steps:
+  - label: "Scan Directory"
+    command: ls .
+    env:
+    - WIZ_API_ID: "<your-id-goes-here>"
+    plugins:
+      - wiz#v1.3.2:
+          scan-type: 'dir'
+          path: 'main.tf'
+```
+
+By default, `path` parameter will be the root of your repository, and scan all files in the local directory.
+To change the directory, add the following to your `pipeline.yml`, the plugin will scan the chosen directory.
+
+```yaml
+steps:
+  - label: "Scan Files in different Directory"
+    command: ls my-dir
+    env:
+    - WIZ_API_ID: "<your-id-goes-here>"
+    plugins:
+      - wiz#v1.3.2:
+          scan-type: 'dir'
+          path: 'my-dir'
+```
+
 ## Configuration
 
 ### `api-secret-env` (Optional, string)
