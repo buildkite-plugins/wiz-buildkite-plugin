@@ -23,6 +23,7 @@ configuration:
     scan-type:
       type: string
       enum:
+        - dir
         - docker
         - iac  
     show-secret-snippets:
