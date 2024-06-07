@@ -5,8 +5,7 @@ load "$BATS_PLUGIN_PATH/load.bash"
 # Uncomment the following line to debug stub failures
 # export BUILDKITE_AGENT_STUB_DEBUG=/dev/tty
 
-
-setup () {
+setup() {
   export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="docker"
   export BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS="ubuntu:22.04"
   export WIZ_DIR="$HOME/.wiz"
