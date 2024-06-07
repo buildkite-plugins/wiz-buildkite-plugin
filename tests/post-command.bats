@@ -92,3 +92,14 @@ setup() {
   assert_output "+++ 🚨 Missing scan type. Possible values: 'iac', 'docker', 'dir'"
   assert_failure
 }
+
+@test "Docker Scan without BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS" {
+  export WIZ_API_ID="test"
+  export WIZ_API_SECRET="secret"
+  unset BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS
+
+  run "$PWD/hooks/post-command"
+  assert_output "+++ 🚨 Missing image address, docker scans require an adress to pull the image"
+
+  assert_failure
+}
