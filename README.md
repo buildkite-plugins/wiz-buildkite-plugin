@@ -141,6 +141,11 @@ Used when `scan-type` is `iac`.
 
 The path to image file, if the `scan-type` is `docker`.
 
+### `output-format` (Optional, string): `human | json | sarif`
+
+Scans output format.
+Defaults to: `human`
+
 ### `parameter-files` (Optional, string)
 
 Comma separated list of globs of external parameter files to include while scanning e.g., `variables.tf`
@@ -150,6 +155,11 @@ Used when `scan-type` is `iac`.
 
 The file or directory to scan, defaults to the root directory of repository.
 Used when `scan-type` is `dir` or `iac`.
+
+### `show-secret-snippets` (Optional, bool)
+
+Enable snippets in secrets. 
+Defaults to: `false`
 
 ## Developing
 
