@@ -133,7 +133,7 @@ steps:
     env:
     - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
-      - wiz#v1.3.2:
+      - wiz#v1.3.3:
           scan-type: 'dir'
           path: 'main.tf'
 ```
@@ -148,7 +148,7 @@ steps:
     env:
     - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
-      - wiz#v1.3.2:
+      - wiz#v1.3.3:
           scan-type: 'dir'
           path: 'my-dir'
 ```
