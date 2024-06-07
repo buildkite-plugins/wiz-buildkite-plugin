@@ -27,7 +27,8 @@ configuration:
         - docker
         - iac  
     show-secret-snippets:
-      type: bool
+      type: boolean
+      default: false
     iac-type:
       type: string
       enum:
