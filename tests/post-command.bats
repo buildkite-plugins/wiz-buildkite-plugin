@@ -66,11 +66,11 @@ setup() {
 
 @test "No Wiz API Secret password found in \$WIZ_API_SECRET" {
   export WIZ_API_ID="test"
-  export WIZ_API_SECRET=""
+  unset WIZ_API_SECRET
 
   run "$PWD/hooks/post-command"
 
-  assert_output --partial "No Wiz API Secret password found in $WIZ_API_SECRET"
+  assert_output "+++ 🚨 No Wiz API Secret password found in \$WIZ_API_SECRET"
   assert_failure
 }
 
@@ -81,7 +81,7 @@ setup() {
 
   run "$PWD/hooks/post-command"
 
-  assert_output --partial "No Wiz API Secret password found in $CUSTOM_WIZ_API_SECRET_ENV"
+  assert_output "+++ 🚨 No Wiz API Secret password found in \$CUSTOM_WIZ_API_SECRET_ENV"
   assert_failure
 }
 
@@ -89,6 +89,6 @@ setup() {
   export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE=""
 
   run "$PWD/hooks/post-command"
-  assert_output "Missing scan type. Possible values: 'iac', 'docker'"
+  assert_output "+++ 🚨 Missing scan type. Possible values: 'iac', 'docker', 'dir'"
   assert_failure
 }
