@@ -16,6 +16,7 @@ configuration:
         - human
         - json
         - sarif
+      default: human
     parameter-files:
       type: string
     path:
