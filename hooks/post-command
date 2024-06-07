@@ -156,6 +156,34 @@ iacScan() {
     exit $exit_code
 }
 
+dirScan() {
+    mkdir -p result
+    docker run \
+        --rm -it \
+        --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
+        --mount type=bind,src="$PWD",dst=/scan \
+        "${wiz_cli_container}" \
+        dir scan \
+        -o /scan/result/output,human \
+        --name "$BUILDKITE_JOB_ID" \
+        --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
+
+    exit_code="$?"
+    case $exit_code in
+    0)
+        buildAnnotation "dir" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-success' --style 'success'
+        ;;
+    *)
+        buildAnnotation "dir" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-warning' --style 'warning'
+        ;;
+    esac
+    # buildkite-agent artifact upload "result/**/*" --log-level info
+    # this post step will be used in template to check the step was run
+    echo "${BUILDKITE_BUILD_ID}" >check-file && buildkite-agent artifact upload check-file
+
+    exit $exit_code
+}
+
 case "${SCAN_TYPE}" in
 iac)
     setupWiz
