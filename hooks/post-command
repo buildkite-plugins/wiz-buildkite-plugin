@@ -7,6 +7,8 @@ SCAN_TYPE="${BUILDKITE_PLUGIN_WIZ_SCAN_TYPE:-}"
 FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-}"
 PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
 IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
+OUTPUT_FORMAT="${BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT:=human}"
+SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
 
 if [[ -z "${SCAN_TYPE}" ]]; then
     echo "Missing scan type. Possible values: 'iac', 'docker'"
@@ -30,6 +32,21 @@ fi
 ##
 
 args=()
+
+## Global Parameters
+
+if [[ "${SHOW_SECRET_SNIPPETS}" == "true" ]]; then
+    args+=("--show-secret-snippets")
+fi
+
+output_formats=("human" "json" "sarif")
+if [[ ${output_formats[*]} =~ ${OUTPUT_FORMAT} ]]; then
+    args+=("--format=${OUTPUT_FORMAT}")
+else
+    echo "+++ 🚨 Invalid Output Format: ${OUTPUT_FORMAT}"
+    echo "Valid Formats: ${output_formats[*]}"
+    exit 1
+fi
 
 if [[ -n "${IAC_TYPE}" ]]; then
     args+=("--types=${IAC_TYPE}")
