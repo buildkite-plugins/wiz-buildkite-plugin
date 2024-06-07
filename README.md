@@ -189,7 +189,7 @@ Used when `scan-type` is `dir` or `iac`.
 
 ### `show-secret-snippets` (Optional, bool)
 
-Enable snippets in secrets. 
+Enable snippets in secrets.
 Defaults to: `false`
 
 ## Developing
