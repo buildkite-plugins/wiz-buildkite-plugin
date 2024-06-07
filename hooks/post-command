@@ -52,12 +52,12 @@ fi
 
 if [[ "${SCAN_TYPE}" == "iac" ]]; then
 
-if [[ -n "${IAC_TYPE}" ]]; then
-    args+=("--types=${IAC_TYPE}")
-fi
+    if [[ -n "${IAC_TYPE}" ]]; then
+        args+=("--types=${IAC_TYPE}")
+    fi
 
-if [[ -n "${PARAMETER_FILES}" ]]; then
-    args+=("--parameter-files=${PARAMETER_FILES}")
+    if [[ -n "${PARAMETER_FILES}" ]]; then
+        args+=("--parameter-files=${PARAMETER_FILES}")
     fi
 fi
 
@@ -132,8 +132,8 @@ dockerImageScan() {
         "${wiz_cli_container}" \
         docker scan --image "$IMAGE" \
         --policy-hits-only \
-        -f human \
-        -o /scan/result,human,true
+        -o /scan/result,human,true ${args:+"${args[@]}"}
+
     exit_code="$?"
     image_name=$(echo "$IMAGE" | cut -d "/" -f 2)
     # FIXME: Linktree Specific Env. Var.
@@ -157,7 +157,6 @@ iacScan() {
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container}" \
         iac scan \
-        -f human \
         -o /scan/result/output,human \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
