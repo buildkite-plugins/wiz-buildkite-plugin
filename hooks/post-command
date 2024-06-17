@@ -16,7 +16,7 @@ if [[ -z "${SCAN_TYPE}" ]]; then
 fi
 
 if [[ "${SCAN_TYPE}" == "docker" && -z "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}" ]]; then
-    echo "+++ 🚨 Missing image address, docker scans require an adress to pull the image"
+    echo "+++ 🚨 Missing image address, docker scans require an address to pull the image"
     exit 1
 fi
 
