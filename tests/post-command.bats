@@ -99,7 +99,7 @@ setup() {
   unset BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS
 
   run "$PWD/hooks/post-command"
-  assert_output "+++ 🚨 Missing image address, docker scans require an adress to pull the image"
+  assert_output "+++ 🚨 Missing image address, docker scans require an address to pull the image"
 
   assert_failure
 }
