@@ -7,14 +7,16 @@ SCAN_TYPE="${BUILDKITE_PLUGIN_WIZ_SCAN_TYPE:-}"
 FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-}"
 PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
 IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
+OUTPUT_FORMAT="${BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT:=human}"
+SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
 
 if [[ -z "${SCAN_TYPE}" ]]; then
-    echo "Missing scan type. Possible values: 'iac', 'docker'"
+    echo "+++ 🚨 Missing scan type. Possible values: 'iac', 'docker', 'dir'"
     exit 1
 fi
 
-if [ "${SCAN_TYPE}" = "docker" ] && [[ -z "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}" ]]; then
-    echo "Missing image address, docker scans require an adress to pull the image"
+if [[ "${SCAN_TYPE}" == "docker" && -z "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}" ]]; then
+    echo "+++ 🚨 Missing image address, docker scans require an address to pull the image"
     exit 1
 fi
 
@@ -31,12 +33,32 @@ fi
 
 args=()
 
-if [[ -n "${IAC_TYPE}" ]]; then
-    args+=("--types=${IAC_TYPE}")
+## Global Parameters
+
+if [[ "${SHOW_SECRET_SNIPPETS}" == "true" ]]; then
+    args+=("--show-secret-snippets")
 fi
 
-if [[ -n "${PARAMETER_FILES}" ]]; then
-    args+=("--parameter-files=${PARAMETER_FILES}")
+output_formats=("human" "json" "sarif")
+if [[ ${output_formats[*]} =~ ${OUTPUT_FORMAT} ]]; then
+    args+=("--format=${OUTPUT_FORMAT}")
+else
+    echo "+++ 🚨 Invalid Output Format: ${OUTPUT_FORMAT}"
+    echo "Valid Formats: ${output_formats[*]}"
+    exit 1
+fi
+
+## IAC Scanning Parameters
+
+if [[ "${SCAN_TYPE}" == "iac" ]]; then
+
+    if [[ -n "${IAC_TYPE}" ]]; then
+        args+=("--types=${IAC_TYPE}")
+    fi
+
+    if [[ -n "${PARAMETER_FILES}" ]]; then
+        args+=("--parameter-files=${PARAMETER_FILES}")
+    fi
 fi
 
 # Get the architecture of the machine for running the container image due to "latest" not being multi-architecture
@@ -110,8 +132,8 @@ dockerImageScan() {
         "${wiz_cli_container}" \
         docker scan --image "$IMAGE" \
         --policy-hits-only \
-        -f human \
-        -o /scan/result,human,true
+        -o /scan/result,human,true ${args:+"${args[@]}"}
+
     exit_code="$?"
     image_name=$(echo "$IMAGE" | cut -d "/" -f 2)
     # FIXME: Linktree Specific Env. Var.
@@ -135,7 +157,6 @@ iacScan() {
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container}" \
         iac scan \
-        -f human \
         -o /scan/result/output,human \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
@@ -156,6 +177,34 @@ iacScan() {
     exit $exit_code
 }
 
+dirScan() {
+    mkdir -p result
+    docker run \
+        --rm -it \
+        --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
+        --mount type=bind,src="$PWD",dst=/scan \
+        "${wiz_cli_container}" \
+        dir scan \
+        -o /scan/result/output,human \
+        --name "$BUILDKITE_JOB_ID" \
+        --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
+
+    exit_code="$?"
+    case $exit_code in
+    0)
+        buildAnnotation "dir" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-success' --style 'success'
+        ;;
+    *)
+        buildAnnotation "dir" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-warning' --style 'warning'
+        ;;
+    esac
+    # buildkite-agent artifact upload "result/**/*" --log-level info
+    # this post step will be used in template to check the step was run
+    echo "${BUILDKITE_BUILD_ID}" >check-file && buildkite-agent artifact upload check-file
+
+    exit $exit_code
+}
+
 case "${SCAN_TYPE}" in
 iac)
     setupWiz
@@ -164,5 +213,9 @@ iac)
 docker)
     setupWiz
     dockerImageScan
+    ;;
+dir)
+    setupWiz
+    dirScan
     ;;
 esac

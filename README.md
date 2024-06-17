@@ -122,13 +122,44 @@ steps:
           path: 'plan.tfplanjson'
 ```
 
+### Directory Scanning
+
+Add the following to your `pipeline.yml`, the plugin will scan a directory.
+
+```yaml
+steps:
+  - label: "Scan Directory"
+    command: ls .
+    env:
+    - WIZ_API_ID: "<your-id-goes-here>"
+    plugins:
+      - wiz#v1.3.3:
+          scan-type: 'dir'
+          path: 'main.tf'
+```
+
+By default, `path` parameter will be the root of your repository, and scan all files in the local directory.
+To change the directory, add the following to your `pipeline.yml`, the plugin will scan the chosen directory.
+
+```yaml
+steps:
+  - label: "Scan Files in different Directory"
+    command: ls my-dir
+    env:
+    - WIZ_API_ID: "<your-id-goes-here>"
+    plugins:
+      - wiz#v1.3.3:
+          scan-type: 'dir'
+          path: 'my-dir'
+```
+
 ## Configuration
 
 ### `api-secret-env` (Optional, string)
 
 The environment variable that the Wiz API Secret is stored in. Defaults to using `WIZ_API_SECRET`. Refer to the [documentation](https://buildkite.com/docs/pipelines/secrets#using-a-secrets-storage-service) for more information about managing secrets on your Buildkite agents.
 
-### `scan-type` (Required, string) : 'docker | iac'
+### `scan-type` (Required, string) : `dir | docker | iac'
 
 The type of resource to be scanned.
 
@@ -141,6 +172,11 @@ Used when `scan-type` is `iac`.
 
 The path to image file, if the `scan-type` is `docker`.
 
+### `output-format` (Optional, string): `human | json | sarif`
+
+Scans output format.
+Defaults to: `human`
+
 ### `parameter-files` (Optional, string)
 
 Comma separated list of globs of external parameter files to include while scanning e.g., `variables.tf`
@@ -149,7 +185,12 @@ Used when `scan-type` is `iac`.
 ### `path` (Optional, string)
 
 The file or directory to scan, defaults to the root directory of repository.
-Used when `scan-type` is `iac`.
+Used when `scan-type` is `dir` or `iac`.
+
+### `show-secret-snippets` (Optional, bool)
+
+Enable snippets in secrets.
+Defaults to: `false`
 
 ## Developing
 

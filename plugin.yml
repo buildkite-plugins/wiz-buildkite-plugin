@@ -10,6 +10,13 @@ configuration:
       type: string
     image-address:
       type: string
+    output-format:
+      type: string
+      enum:
+        - human
+        - json
+        - sarif
+      default: human
     parameter-files:
       type: string
     path:
@@ -17,8 +24,12 @@ configuration:
     scan-type:
       type: string
       enum:
+        - dir
         - docker
-        - iac
+        - iac  
+    show-secret-snippets:
+      type: boolean
+      default: false
     iac-type:
       type: string
       enum:
