@@ -10,6 +10,8 @@ configuration:
       type: string
     image-address:
       type: string
+    wiz-dir:
+      type: string
     output-format:
       type: string
       enum:
