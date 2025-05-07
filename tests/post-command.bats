@@ -113,3 +113,13 @@ setup() {
   
   assert_failure
 }
+
+@test "Invalid Additional Output Format" {
+  export WIZ_API_SECRET="secret"
+  export BUILDKITE_PLUGIN_WIZ_ADDITIONAL_OUTPUT="wrong-format"
+
+  run "$PWD/hooks/post-command"
+  assert_output --partial "+++ 🚨 Invalid Additional Output Format: $BUILDKITE_PLUGIN_WIZ_ADDITIONAL_OUTPUT"
+
+  assert_failure
+}

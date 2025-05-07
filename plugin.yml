@@ -16,7 +16,15 @@ configuration:
         - human
         - json
         - sarif
+        - csv-zip
       default: human
+    additional-output:
+      type: string
+      enum:
+        - human
+        - json
+        - sarif
+        - csv-zip
     parameter-files:
       type: string
     path:

@@ -8,6 +8,7 @@ FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-}"
 PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
 IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
 OUTPUT_FORMAT="${BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT:=human}"
+ADDITIONAL_OUTPUT="${BUILDKITE_PLUGIN_WIZ_ADDITIONAL_OUTPUT:-}"
 SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
 
 if [[ -z "${SCAN_TYPE}" ]]; then
@@ -39,13 +40,23 @@ if [[ "${SHOW_SECRET_SNIPPETS}" == "true" ]]; then
     args+=("--show-secret-snippets")
 fi
 
-output_formats=("human" "json" "sarif")
+output_formats=("human" "json" "sarif" "csv-zip")
 if [[ ${output_formats[*]} =~ ${OUTPUT_FORMAT} ]]; then
     args+=("--format=${OUTPUT_FORMAT}")
 else
     echo "+++ 🚨 Invalid Output Format: ${OUTPUT_FORMAT}"
     echo "Valid Formats: ${output_formats[*]}"
     exit 1
+fi
+
+if [[ -n "${ADDITIONAL_OUTPUT}" ]]; then
+    if [[ ${output_formats[*]} =~ ${ADDITIONAL_OUTPUT} ]]; then
+        args+=("--output=/scan/result/output.${ADDITIONAL_OUTPUT},${ADDITIONAL_OUTPUT}")
+    else
+        echo "+++ 🚨 Invalid Additional Output Format: ${ADDITIONAL_OUTPUT}"
+        echo "Valid Formats: ${output_formats[*]}"
+        exit 1
+    fi
 fi
 
 ## IAC Scanning Parameters

@@ -172,10 +172,14 @@ Used when `scan-type` is `iac`.
 
 The path to image file, if the `scan-type` is `docker`.
 
-### `output-format` (Optional, string): `human | json | sarif`
+### `output-format` (Optional, string): `human | json | sarif | csv-zip`
 
 Scans output format.
 Defaults to: `human`
+
+### `additional-output` (Optional, string): `human | json | sarif | csv-zip`
+
+Generates an additional output file with the specified format.
 
 ### `parameter-files` (Optional, string)
 
