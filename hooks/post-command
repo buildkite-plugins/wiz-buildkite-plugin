@@ -134,6 +134,7 @@ EOF
 }
 
 dockerImageScan() {
+    mkdir -p result
     # TODO check feasibility of mount/mountWithLayers
     IMAGE="${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}"
     # make sure local docker has the image
@@ -154,10 +155,10 @@ dockerImageScan() {
     # buildkite-agent artifact upload result --log-level info
     case $exit_code in
     0)
-        buildAnnotation "docker" "$image_name" true "$PWD/result" | buildkite-agent annotate --append --style 'success' --context 'ctx-wiz-docker-success'
+        buildAnnotation "docker" "$image_name" true "result/output" | buildkite-agent annotate --append --style 'success' --context 'ctx-wiz-docker-success'
         ;;
     *)
-        buildAnnotation "docker" "$image_name" false "$PWD/result" | buildkite-agent annotate --append --context 'ctx-wiz-docker-warning' --style 'warning'
+        buildAnnotation "docker" "$image_name" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-docker-warning' --style 'warning'
         ;;
     esac
     exit $exit_code
