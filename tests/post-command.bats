@@ -104,22 +104,22 @@ setup() {
   assert_failure
 }
 
-@test "Invalid Output Format" {
+@test "Invalid Scan Format" {
   export WIZ_API_SECRET="secret"
-  export BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT="wrong-format"
+  export BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT="wrong-format"
 
   run "$PWD/hooks/post-command"
-  assert_output --partial "+++ 🚨 Invalid Output Format: $BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT"
+  assert_output --partial "+++ 🚨 Invalid Scan Format: $BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT"
   
   assert_failure
 }
 
-@test "Invalid Additional Output Format" {
+@test "Invalid File Output Format" {
   export WIZ_API_SECRET="secret"
-  export BUILDKITE_PLUGIN_WIZ_ADDITIONAL_OUTPUT="wrong-format"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT="wrong-format"
 
   run "$PWD/hooks/post-command"
-  assert_output --partial "+++ 🚨 Invalid Additional Output Format: $BUILDKITE_PLUGIN_WIZ_ADDITIONAL_OUTPUT"
+  assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"
 
   assert_failure
 }
