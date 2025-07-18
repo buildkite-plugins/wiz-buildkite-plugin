@@ -7,8 +7,8 @@ SCAN_TYPE="${BUILDKITE_PLUGIN_WIZ_SCAN_TYPE:-}"
 FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-}"
 PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
 IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
-OUTPUT_FORMAT="${BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT:=human}"
-ADDITIONAL_OUTPUT="${BUILDKITE_PLUGIN_WIZ_ADDITIONAL_OUTPUT:-}"
+SCAN_FORMAT="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:=human}"
+FILE_OUTPUT_FORMAT="${BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT:=human}"
 SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
 
 if [[ -z "${SCAN_TYPE}" ]]; then
@@ -40,23 +40,26 @@ if [[ "${SHOW_SECRET_SNIPPETS}" == "true" ]]; then
     args+=("--show-secret-snippets")
 fi
 
-output_formats=("human" "json" "sarif" "csv-zip")
-if [[ ${output_formats[*]} =~ ${OUTPUT_FORMAT} ]]; then
-    args+=("--format=${OUTPUT_FORMAT}")
+scan_formats=("human" "json" "sarif")
+if [[ ${scan_formats[*]} =~ ${SCAN_FORMAT} ]]; then
+    args+=("--format=${SCAN_FORMAT}")
 else
-    echo "+++ 🚨 Invalid Output Format: ${OUTPUT_FORMAT}"
-    echo "Valid Formats: ${output_formats[*]}"
+    echo "+++ 🚨 Invalid Scan Format: ${SCAN_FORMAT}"
+    echo "Valid Formats: ${scan_formats[*]}"
     exit 1
 fi
 
-if [[ -n "${ADDITIONAL_OUTPUT}" ]]; then
-    if [[ ${output_formats[*]} =~ ${ADDITIONAL_OUTPUT} ]]; then
-        args+=("--output=/scan/result/output.${ADDITIONAL_OUTPUT},${ADDITIONAL_OUTPUT}")
-    else
-        echo "+++ 🚨 Invalid Additional Output Format: ${ADDITIONAL_OUTPUT}"
-        echo "Valid Formats: ${output_formats[*]}"
-        exit 1
-    fi
+file_output_formats=("human" "json" "sarif" "csv-zip")
+if [[ -n "${FILE_OUTPUT_FORMAT}" ]]; then
+    for format in ${FILE_OUTPUT_FORMAT}; do
+        if [[ ${file_output_formats[*]} =~ ${format} ]]; then
+            args+=("--output=/scan/result/output,${format}")
+        else
+            echo "+++ 🚨 Invalid File Output Format: ${format}"
+            echo "Valid Formats: ${file_output_formats[*]}"
+            exit 1
+        fi
+    done
 fi
 
 ## IAC Scanning Parameters
@@ -143,7 +146,7 @@ dockerImageScan() {
         "${wiz_cli_container}" \
         docker scan --image "$IMAGE" \
         --policy-hits-only \
-        -o /scan/result,human,true ${args:+"${args[@]}"}
+        ${args:+"${args[@]}"}
 
     exit_code="$?"
     image_name=$(echo "$IMAGE" | cut -d "/" -f 2)
@@ -168,7 +171,6 @@ iacScan() {
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container}" \
         iac scan \
-        -o /scan/result/output,human \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
 
@@ -196,7 +198,6 @@ dirScan() {
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container}" \
         dir scan \
-        -o /scan/result/output,human \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
 
