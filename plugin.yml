@@ -10,21 +10,22 @@ configuration:
       type: string
     image-address:
       type: string
-    output-format:
+    scan-format:
       type: string
+      enum:
+        - human
+        - json
+        - sarif
+      default: human
+    file-output-format:
+      type: [string, array]
       enum:
         - human
         - json
         - sarif
         - csv-zip
       default: human
-    additional-output:
-      type: string
-      enum:
-        - human
-        - json
-        - sarif
-        - csv-zip
+      minimum: 1
     parameter-files:
       type: string
     path:
@@ -34,7 +35,7 @@ configuration:
       enum:
         - dir
         - docker
-        - iac  
+        - iac
     show-secret-snippets:
       type: boolean
       default: false
@@ -42,10 +43,10 @@ configuration:
       type: string
       enum:
         - Ansible
-        - AzureResourceManager 
-        - Cloudformation 
-        - Dockerfile 
-        - GoogleCloudDeploymentManager 
+        - AzureResourceManager
+        - Cloudformation
+        - Dockerfile
+        - GoogleCloudDeploymentManager
         - Kubernetes
         - Terraform
   required:
