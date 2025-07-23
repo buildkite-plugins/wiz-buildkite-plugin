@@ -2,13 +2,17 @@
 
 set -ueo pipefail
 
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
+# shellcheck source=lib/shared.bash
+. "$DIR/../lib/shared.bash"
+
 WIZ_DIR="$HOME/.wiz"
 SCAN_TYPE="${BUILDKITE_PLUGIN_WIZ_SCAN_TYPE:-}"
 FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-}"
 PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
 IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
 SCAN_FORMAT="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:=human}"
-FILE_OUTPUT_FORMAT="${BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT:=human}"
 SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
 
 if [[ -z "${SCAN_TYPE}" ]]; then
@@ -49,17 +53,26 @@ else
     exit 1
 fi
 
-file_output_formats=("human" "json" "sarif" "csv-zip")
-if [[ -n "${FILE_OUTPUT_FORMAT}" ]]; then
-    for format in ${FILE_OUTPUT_FORMAT}; do
-        if [[ ${file_output_formats[*]} =~ ${format} ]]; then
+# Define valid formats
+valid_file_formats=("human" "json" "sarif" "csv-zip")
+
+# Declare result array
+declare -a result
+
+# Read file output formats into result array
+if plugin_read_list_into_result "FILE_OUTPUT_FORMAT"; then
+    for format in "${result[@]}"; do
+        if in_array "$format" "${valid_file_formats[@]}"; then
             args+=("--output=/scan/result/output,${format}")
         else
             echo "+++ 🚨 Invalid File Output Format: ${format}"
-            echo "Valid Formats: ${file_output_formats[*]}"
+            echo "Valid Formats: ${valid_file_formats[*]}"
             exit 1
         fi
     done
+else
+    # If no format specified, use default
+    args+=("--output=/scan/result/output,human")
 fi
 
 ## IAC Scanning Parameters
