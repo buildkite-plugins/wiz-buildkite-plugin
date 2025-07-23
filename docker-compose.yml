@@ -1,11 +1,10 @@
-version: '2'
 services:
   tests:
-    image: buildkite/plugin-tester
+    image: buildkite/plugin-tester:v4.2.0
     volumes:
-      - ".:/plugin:ro"
+      - ".:/plugin"
   lint:
-    image: buildkite/plugin-linter
+    image: buildkite/plugin-linter:v2.1.0
     command: ['--id', 'wiz']
     volumes:
-      - ".:/plugin:ro"
+      - ".:/plugin"
