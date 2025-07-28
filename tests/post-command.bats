@@ -123,3 +123,14 @@ setup() {
 
   assert_failure
 }
+
+@test "Invalid File Output Format (multiple)" {
+  export WIZ_API_SECRET="secret"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="wrong-format"
+
+  run "$PWD/hooks/post-command"
+  assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
+
+  assert_failure
+}

@@ -60,7 +60,7 @@ valid_file_formats=("human" "json" "sarif" "csv-zip")
 declare -a result
 
 # Read file output formats into result array
-if plugin_read_list_into_result "FILE_OUTPUT_FORMAT"; then
+if plugin_read_list_into_result "BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"; then
     for format in "${result[@]}"; do
         if in_array "$format" "${valid_file_formats[@]}"; then
             args+=("--output=/scan/result/output,${format}")
