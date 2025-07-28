@@ -6,6 +6,9 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 # shellcheck source=lib/shared.bash
 . "$DIR/../lib/shared.bash"
+# shellcheck source=lib/plugin.bash
+. "$DIR/../lib/plugin.bash"
+
 
 WIZ_DIR="$HOME/.wiz"
 SCAN_TYPE="${BUILDKITE_PLUGIN_WIZ_SCAN_TYPE:-}"
@@ -122,24 +125,6 @@ esac
 wiz_cli_container_repository="wiziocli.azurecr.io/wizcli"
 wiz_cli_container="${wiz_cli_container_repository}:${container_image_tag}"
 
-#TODO move this to agent-startup so all agents have wiz setup to save time, possibly directly as cli
-setupWiz() {
-    echo "Setting up and authenticating wiz"
-    mkdir -p "$WIZ_DIR"
-    docker run \
-        --rm -it \
-        --mount type=bind,src="${WIZ_DIR}",dst=/cli \
-        "${wiz_cli_container}" \
-        auth --id="${WIZ_API_ID}" --secret="${!api_secret_var}"
-    # check that wiz-auth work expected, and a file in WIZ_DIR is created
-    if [ -z "$(ls -A "${WIZ_DIR}")" ]; then
-        echo "Wiz authentication failed, please confirm that credentials are set for WIZ_API_ID and WIZ_API_SECRET"
-        exit 1
-    else
-        echo "Authenticated successfully"
-    fi
-}
-
 #$1 type, $2 name, $3 pass/fail, $4 result file
 buildAnnotation() {
     annotation_file=${RANDOM:0:2}-annotation.md
@@ -247,15 +232,15 @@ dirScan() {
 
 case "${SCAN_TYPE}" in
 iac)
-    setupWiz
+    setupWiz "$wiz_cli_container" "$WIZ_DIR"
     iacScan
     ;;
 docker)
-    setupWiz
+    setupWiz "$wiz_cli_container" "$WIZ_DIR"
     dockerImageScan
     ;;
 dir)
-    setupWiz
+    setupWiz "$wiz_cli_container" "$WIZ_DIR"
     dirScan
     ;;
 esac
