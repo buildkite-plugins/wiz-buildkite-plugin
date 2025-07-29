@@ -180,7 +180,6 @@ Defaults to: `human`
 ### `file-output-format` (Optional, string or array): `human | json | sarif | csv-zip`
 
 Generates an additional output file with the specified format.
-Defaults to: `human`
 
 ### `parameter-files` (Optional, string)
 

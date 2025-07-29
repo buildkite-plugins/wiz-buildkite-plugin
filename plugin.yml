@@ -24,8 +24,6 @@ configuration:
         - json
         - sarif
         - csv-zip
-      default: human
-      minimum: 1
     parameter-files:
       type: string
     path:
