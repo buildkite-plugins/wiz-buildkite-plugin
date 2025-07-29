@@ -155,10 +155,6 @@ steps:
 
 ## Configuration
 
-### `api-secret-env` (Optional, string)
-
-The environment variable that the Wiz API Secret is stored in. Defaults to using `WIZ_API_SECRET`. Refer to the [documentation](https://buildkite.com/docs/pipelines/secrets#using-a-secrets-storage-service) for more information about managing secrets on your Buildkite agents.
-
 ### `scan-type` (Required, string) : `dir | docker | iac'
 
 The type of resource to be scanned.

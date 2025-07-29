@@ -6,8 +6,6 @@ requirements:
   - docker
 configuration:
   properties:
-    api-secret-env:
-      type: string
     image-address:
       type: string
     scan-format:
