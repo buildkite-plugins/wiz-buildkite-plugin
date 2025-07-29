@@ -2,9 +2,9 @@ services:
   tests:
     image: buildkite/plugin-tester:v4.2.0
     volumes:
-      - ".:/plugin"
+      - ".:/plugin:ro"
   lint:
     image: buildkite/plugin-linter:v2.1.0
     command: ['--id', 'wiz']
     volumes:
-      - ".:/plugin"
+      - ".:/plugin:ro"
