@@ -6,6 +6,19 @@ Scans your infrastructure-as-code Cloudformation stacks or docker images for sec
 
 This plugin is forked from [blstrco/wiz-buildkite-plugin](https://github.com/blstrco/wiz-buildkite-plugin).
 
+## Requirements
+
+In order to use this plugin, you will need to have the following installed on your buildkite agent:
+
+- Docker
+
+And the following environment variables exported in the job (e.g. via an Agent hook or Plugin):
+
+- WIZ_CLIENT_ID (Wiz service account's client ID)
+- WIZ_CLIENT_SECRET (Wiz service account's secret)
+
+Check out [Buildkite's documentation](https://buildkite.com/docs/pipelines/security/secrets/managing) for more information on how to manage secrets in Buildkite.
+
 ## Examples
 
 ### Docker Scanning
@@ -15,8 +28,6 @@ Add the following to your `pipeline.yml`, the plugin will pull the image, scan i
 ```yml
 steps:
   - command: ls
-    env:
-    - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.4.0:
           scan-type: 'docker'
@@ -39,8 +50,6 @@ To avoid adding build time overhead, you can add IaC scanning to your `cdk diff`
 ```yml
 steps:
   - command: ls
-    env:
-    - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - docker-compose#v4.16.0:
         # to get the output of CDK diff, mount the volume in cdk diff stage
@@ -59,8 +68,6 @@ Add the following to your `pipeline.yml`, the plugin will scan a specific CloudF
 steps:
   - label: "Scan CloudFormation template file"
     command: ls
-    env:
-    - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.4.0:
           scan-type: 'iac'
@@ -79,8 +86,6 @@ Add the following to your `pipeline.yml`, the plugin will scan a specific Terraf
 steps:
   - label: "Scan Terraform File"
     command: ls *.tf
-    env:
-    - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.4.0:
           scan-type: 'iac'
@@ -96,8 +101,6 @@ To change the directory, add the following to your `pipeline.yml`, the plugin wi
 steps:
   - label: "Scan Terraform Files in Directory"
     command: ls my-terraform-dir/*.tf
-    env:
-    - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.4.0:
           scan-type: 'iac'
@@ -113,8 +116,6 @@ Add the following to your `pipeline.yml`, the plugin will scan a Terraform Plan.
 steps:
   - label: "Scan Terraform Plan"
     command: terraform plan -out plan.tfplan && terraform show -json plan.tfplan | jq -er . > plan.tfplanjson
-    env:
-    - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.4.0:
           scan-type: 'iac'
@@ -130,8 +131,6 @@ Add the following to your `pipeline.yml`, the plugin will scan a directory.
 steps:
   - label: "Scan Directory"
     command: ls .
-    env:
-    - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.4.0:
           scan-type: 'dir'
@@ -145,8 +144,6 @@ To change the directory, add the following to your `pipeline.yml`, the plugin wi
 steps:
   - label: "Scan Files in different Directory"
     command: ls my-dir
-    env:
-    - WIZ_API_ID: "<your-id-goes-here>"
     plugins:
       - wiz#v1.4.0:
           scan-type: 'dir'
