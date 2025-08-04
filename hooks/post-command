@@ -118,26 +118,6 @@ esac
 wiz_cli_container_repository="wiziocli.azurecr.io/wizcli"
 wiz_cli_container="${wiz_cli_container_repository}:${container_image_tag}"
 
-#$1 type, $2 name, $3 pass/fail, $4 result file
-buildAnnotation() {
-    annotation_file=${RANDOM:0:2}-annotation.md
-    docker_or_iac=$(if [ "$1" = "docker" ]; then echo "Wiz Docker Image Scan"; else echo "Wiz IaC Scan"; fi)
-    pass_or_fail=$(if [ "$3" = true ]; then echo 'meets'; else echo 'does not meet'; fi)
-    summary="${docker_or_iac} for ${2} ${pass_or_fail} policy requirements"
-    # we need to create a new file to avoid conflicts, we need scan type, name, pass/fail
-    cat <<EOF >>./"${annotation_file}"
-<details>
-<summary>$summary.</summary>
-
-\`\`\`term
-$(cat "$4")
-\`\`\`
-
-</details>
-EOF
-    printf "%b\n" "$(cat ./"${annotation_file}")"
-}
-
 dockerImageScan() {
     mkdir -p result
     # TODO check feasibility of mount/mountWithLayers

@@ -39,3 +39,27 @@ function setupWiz() {
         echo "Authenticated successfully"
     fi
 }
+
+# Create a Buildkite Annotation from a scan results
+# $1 - scan type
+# $2 - scan name
+# $3 - scan pass/fail
+# $4 - scan result file
+buildAnnotation() {
+    annotation_file=${RANDOM:0:2}-annotation.md
+    docker_or_iac=$(if [ "$1" = "docker" ]; then echo "Wiz Docker Image Scan"; else echo "Wiz IaC Scan"; fi)
+    pass_or_fail=$(if [ "$3" = "true" ]; then echo 'meets'; else echo 'does not meet'; fi)
+    summary="${docker_or_iac} for ${2} ${pass_or_fail} policy requirements"
+    # we need to create a new file to avoid conflicts, we need scan type, name, pass/fail
+    cat <<EOF >>./"${annotation_file}"
+<details>
+<summary>$summary.</summary>
+
+\`\`\`term
+$(cat "$4")
+\`\`\`
+
+</details>
+EOF
+    printf "%b\n" "$(cat ./"${annotation_file}")"
+}
