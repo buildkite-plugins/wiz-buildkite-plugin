@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# Determine the machine architecture to select the appropriate container image tag.
+# Available images: `latest`, `latest-amd64`, and `latest-arm64`.
+# For x86_64 and arm64/aarch64, use the corresponding tag; for unknown architectures, fallback to the default `latest` tag.
+function get_wiz_cli_container() {
+    local architecture
+    architecture=$(uname -m)
+    local container_image_tag="latest"
+
+    case $architecture in
+    x86_64)
+        container_image_tag+="-amd64"
+        ;;
+    arm64 | aarch64)
+        container_image_tag+="-arm64"
+        ;;
+    *) ;;
+    esac
+
+    wiz_cli_container_repository="wiziocli.azurecr.io/wizcli"
+    echo "${wiz_cli_container_repository}:${container_image_tag}"
+}
+
 function validateWizClientCredentials() {
     local missing_vars=()
     
@@ -65,6 +87,8 @@ EOF
 }
 
 dockerImageScan() {
+    local wiz_cli_container_image="$1"
+
     mkdir -p result
     # TODO check feasibility of mount/mountWithLayers
     IMAGE="${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}"
@@ -75,7 +99,7 @@ dockerImageScan() {
         --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly \
-        "${wiz_cli_container}" \
+        "${wiz_cli_container_image}" \
         docker scan --image "$IMAGE" \
         --policy-hits-only \
         ${args:+"${args[@]}"}
@@ -96,12 +120,14 @@ dockerImageScan() {
 }
 
 iacScan() {
+    local wiz_cli_container_image="$1"
+
     mkdir -p result
     docker run \
         --rm -it \
         --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
-        "${wiz_cli_container}" \
+        "${wiz_cli_container_image}" \
         iac scan \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
@@ -123,12 +149,14 @@ iacScan() {
 }
 
 dirScan() {
+    local wiz_cli_container_image="$1"
+
     mkdir -p result
     docker run \
         --rm -it \
         --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
-        "${wiz_cli_container}" \
+        "${wiz_cli_container_image}" \
         dir scan \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
@@ -147,4 +175,4 @@ dirScan() {
     echo "${BUILDKITE_BUILD_ID}" >check-file && buildkite-agent artifact upload check-file
 
     exit $exit_code
-}
+} 
