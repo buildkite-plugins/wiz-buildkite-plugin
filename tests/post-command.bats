@@ -149,3 +149,36 @@ teardown() {
 
   assert_failure
 }
+
+@test "Get Wiz CLI Container Image (amd64)" {
+  stub uname "-m : echo 'x86_64'"
+
+  run get_wiz_cli_container
+
+  assert_success
+  assert_output --partial "wiziocli.azurecr.io/wizcli:latest-amd64"
+
+  unstub uname
+}
+
+@test "Get Wiz CLI Container Image (arm64)" {
+  stub uname "-m : echo 'arm64'"
+
+  run get_wiz_cli_container
+
+  assert_success
+  assert_output --partial "wiziocli.azurecr.io/wizcli:latest-arm64"
+
+  unstub uname
+}
+
+@test "Get Wiz CLI Container Image (unknown architecture)" {
+  stub uname "-m : echo 'unknown'"
+
+  run get_wiz_cli_container
+
+  assert_success
+  assert_output --partial "wiziocli.azurecr.io/wizcli:latest"
+
+  unstub uname
+}
