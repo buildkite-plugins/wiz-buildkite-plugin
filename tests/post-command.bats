@@ -2,6 +2,7 @@
 
 load "$BATS_PLUGIN_PATH/load.bash"
 load "${BATS_TEST_DIRNAME}/../lib/plugin.bash"
+load "${BATS_TEST_DIRNAME}/../lib/shared.bash"
 
 # Uncomment the following line to debug stub failures
 # export BUILDKITE_AGENT_STUB_DEBUG=/dev/tty
