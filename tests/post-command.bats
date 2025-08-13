@@ -95,7 +95,7 @@ teardown() {
 @test "Invalid Scan Format" {
   export BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT="wrong-format"
 
-  run "$PWD/hooks/post-command"
+  run get_wiz_cli_args
   assert_output --partial "+++ 🚨 Invalid Scan Format: $BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT"
   
   assert_failure
@@ -104,7 +104,7 @@ teardown() {
 @test "Invalid File Output Format" {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT="wrong-format"
 
-  run "$PWD/hooks/post-command"
+  run get_wiz_cli_args
   assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"
 
   assert_failure
@@ -114,7 +114,7 @@ teardown() {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="wrong-format"
 
-  run "$PWD/hooks/post-command"
+  run get_wiz_cli_args
   assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
 
   assert_failure
@@ -124,15 +124,7 @@ teardown() {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
 
-  stub docker : 'exit 0'
-  stub docker : 'exit 0'
-  stub docker : 'exit 0'
-  stub cat : 'exit 0'
-
-  mkdir -p "$WIZ_DIR"
-  touch "$WIZ_DIR/key"
-
-  run "$PWD/hooks/post-command"
+  run get_wiz_cli_args
   assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
 
   assert_success
@@ -143,11 +135,29 @@ teardown() {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2="wrong-format"
   
-  run "$PWD/hooks/post-command"
+  run get_wiz_cli_args
   assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
   assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2"
 
   assert_failure
+}
+
+@test "Valid Wiz CLI Args (default)" {
+  run get_wiz_cli_args
+
+  assert_success
+  assert_output --partial "--format=human --output=/scan/result/output,human"
+}
+
+@test "Valid Wiz CLI Args (custom)" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT="json"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="json"
+
+  run get_wiz_cli_args
+
+  assert_success
+  assert_output --partial "--format=json --output=/scan/result/output,human --output=/scan/result/output-human,human --output=/scan/result/output-json,json"
 }
 
 @test "Get Wiz CLI Container Image (amd64)" {
