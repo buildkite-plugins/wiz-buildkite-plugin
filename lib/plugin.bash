@@ -1,5 +1,86 @@
 #!/bin/bash
 
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
+# shellcheck source=../lib/shared.bash
+. "${DIR}/shared.bash"
+
+# Used to generate the Wiz CLI arguments, including using the scan type for specific arguments
+# $1 - Scan Type
+function get_wiz_cli_args() {
+    local scan_type="${1}"
+
+    PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
+    IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
+    SCAN_FORMAT="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:=human}"
+    SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
+    args=()
+
+    # Global Parameters
+    if [[ "${SHOW_SECRET_SNIPPETS}" == "true" ]]; then
+        args+=("--show-secret-snippets")
+    fi
+
+    scan_formats=("human" "json" "sarif")
+    if [[ ${scan_formats[*]} =~ ${SCAN_FORMAT} ]]; then
+        args+=("--format=${SCAN_FORMAT}")
+    else
+        echo "+++ 🚨 Invalid Scan Format: ${SCAN_FORMAT}"
+        echo "Valid Formats: ${scan_formats[*]}"
+        exit 1
+    fi
+
+    # Define valid formats
+    valid_file_formats=("human" "json" "sarif" "csv-zip")
+
+    # Default file output which is used for build annotation
+    args+=("--output=/scan/result/output,human")
+
+    # Declare result array
+    declare -a result
+
+    # Read file output formats into result array
+    if plugin_read_list_into_result "BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"; then
+        declare -A seen_formats
+        for format in "${result[@]}"; do
+            # Multiple output files with the same format are supported
+            # but would need to rework this loop to handle and validate i.e., specifying file names, etc.,
+            #  -o, --output file-outputs             Output to file, can be passed multiple times to output to multiple files with possibly different formats.
+            #                                        Must be specified in the following format: file-path[,file-format[,policy-hits-only[,group-by[,include-audit-policy-hits]]]]
+            #                                        Options for file-format: [csv-zip, human, json, sarif], policy-hits-only: [true, false], group-by: [default, layer, resource], include-audit-policy-hits: [true, false]
+            # Check for duplicates
+            if [[ -n "${seen_formats[$format]:-}" ]]; then
+                echo "+++ ⚠️  Duplicate file output format ignored: ${format}"
+                continue
+            fi
+            seen_formats["$format"]=1
+
+            # Check for invalid formats
+            if in_array "$format" "${valid_file_formats[@]}"; then
+                args+=("--output=/scan/result/output-${format},${format}")
+            else
+                echo "+++ 🚨 Invalid File Output Format: ${format}"
+                echo "Valid Formats: ${valid_file_formats[*]}"
+                exit 1
+            fi
+        done
+    fi
+
+    # IAC Scanning Parameters
+    if [[ "${scan_type}" == "iac" ]]; then
+
+        if [[ -n "${IAC_TYPE}" ]]; then
+            args+=("--types=${IAC_TYPE}")
+        fi
+
+        if [[ -n "${PARAMETER_FILES}" ]]; then
+            args+=("--parameter-files=${PARAMETER_FILES}")
+        fi
+    fi
+
+    echo "${args[@]}"
+}
+
 # Determine the machine architecture to select the appropriate container image tag.
 # Available images: `latest`, `latest-amd64`, and `latest-arm64`.
 # For x86_64 and arm64/aarch64, use the corresponding tag; for unknown architectures, fallback to the default `latest` tag.
