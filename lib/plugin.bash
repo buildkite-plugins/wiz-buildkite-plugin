@@ -76,7 +76,7 @@ function get_wiz_cli_args() {
         fi
     fi
 
-    echo "${args[@]}"
+    echo "${args[*]}"
 }
 
 # Determine the machine architecture to select the appropriate container image tag.

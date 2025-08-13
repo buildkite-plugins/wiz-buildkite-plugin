@@ -22,7 +22,9 @@ if [[ "${SCAN_TYPE}" == "docker" && -z "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}"
     exit 1
 fi
 
-cli_args=("$(get_wiz_cli_args "${SCAN_TYPE}")")
+declare -a cli_args
+# shellcheck disable=SC2207
+cli_args=($(get_wiz_cli_args "${SCAN_TYPE}"))
 wiz_cli_container_image=$(get_wiz_cli_container)
 
 case "${SCAN_TYPE}" in
