@@ -1,9 +1,7 @@
 #!/bin/bash
 
-DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
-
-# shellcheck source=./shared.bash
-. "${DIR}/shared.bash"
+# shellcheck source=lib/shared.bash
+. "lib/shared.bash"
 
 # Used to generate the Wiz CLI arguments, including using the scan type for specific arguments
 # $1 - Scan Type
