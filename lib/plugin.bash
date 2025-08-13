@@ -167,26 +167,34 @@ EOF
     printf "%b\n" "$(cat ./"${annotation_file}")"
 }
 
-dockerImageScan() {
+# Docker Image Scan
+# $1 - Wiz CLI Container Image
+# $2 - Directory with auth file
+# $3 - Image Address
+# $4 - CLI Arguments
+function dockerImageScan() {
     local wiz_cli_container_image="$1"
+    local wiz_dir="$2"
+    local image="$3"    
+    local -a cli_args=("${@:4}")
 
     mkdir -p result
-    # TODO check feasibility of mount/mountWithLayers
-    IMAGE="${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}"
+
     # make sure local docker has the image
-    docker pull "$IMAGE"
+    docker pull "$image"
+
     docker run \
         --rm -it \
-        --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
+        --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly \
         "${wiz_cli_container_image}" \
-        docker scan --image "$IMAGE" \
+        docker scan --image "$image" \
         --policy-hits-only \
-        ${args:+"${args[@]}"}
+        "${cli_args[@]}"
 
     exit_code="$?"
-    image_name=$(echo "$IMAGE" | cut -d "/" -f 2)
+    image_name=$(echo "$image" | cut -d "/" -f 2)
     # FIXME: Linktree Specific Env. Var.
     # buildkite-agent artifact upload result --log-level info
     case $exit_code in
@@ -200,18 +208,26 @@ dockerImageScan() {
     exit $exit_code
 }
 
-iacScan() {
+# IaC Scan
+# $1 - Wiz CLI Container Image
+# $2 - Directory with auth file
+# $3 - File Path
+# $4 - CLI Arguments
+function iacScan() {
     local wiz_cli_container_image="$1"
+    local wiz_dir="$2"
+    local file_path="$3"
+    local -a cli_args=("${@:4}")
 
     mkdir -p result
     docker run \
         --rm -it \
-        --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
+        --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container_image}" \
         iac scan \
         --name "$BUILDKITE_JOB_ID" \
-        --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
+        --path "/scan/$file_path" "${cli_args[@]}"
 
     exit_code="$?"
     case $exit_code in
@@ -229,18 +245,26 @@ iacScan() {
     exit $exit_code
 }
 
-dirScan() {
+# Directory Scan
+# $1 - Wiz CLI Container Image
+# $2 - Directory with auth file
+# $3 - File Path
+# $4 - CLI Arguments
+function dirScan() {
     local wiz_cli_container_image="$1"
+    local wiz_dir="$2"
+    local file_path="$3"
+    local -a cli_args=("${@:4}")
 
     mkdir -p result
     docker run \
         --rm -it \
-        --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
+        --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container_image}" \
         dir scan \
         --name "$BUILDKITE_JOB_ID" \
-        --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
+        --path "/scan/$file_path" "${cli_args[@]}"
 
     exit_code="$?"
     case $exit_code in

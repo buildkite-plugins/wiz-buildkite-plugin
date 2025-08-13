@@ -28,14 +28,14 @@ wiz_cli_container_image=$(get_wiz_cli_container)
 case "${SCAN_TYPE}" in
 iac)
     setupWiz "$wiz_cli_container_image" "$WIZ_DIR"
-    iacScan "$wiz_cli_container_image"
+    iacScan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 docker)
     setupWiz "$wiz_cli_container_image" "$WIZ_DIR"
-    dockerImageScan "$wiz_cli_container_image"
+    dockerImageScan "$wiz_cli_container_image" "$WIZ_DIR" "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS}" "${cli_args[@]}"
     ;;
 dir)
     setupWiz "$wiz_cli_container_image" "$WIZ_DIR"
-    dirScan "$wiz_cli_container_image"
+    dirScan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 esac
