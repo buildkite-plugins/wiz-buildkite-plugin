@@ -126,6 +126,7 @@ teardown() {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
 
   run get_wiz_cli_args
+
   assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
 
   assert_success
@@ -137,6 +138,7 @@ teardown() {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2="wrong-format"
   
   run get_wiz_cli_args
+
   assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
   assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2"
 
