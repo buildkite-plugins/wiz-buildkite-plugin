@@ -2,12 +2,17 @@
 
 set -uo pipefail
 
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
+# shellcheck source=lib/shared.bash
+. "$DIR/../lib/shared.bash"
+
 WIZ_DIR="$HOME/.wiz"
 SCAN_TYPE="${BUILDKITE_PLUGIN_WIZ_SCAN_TYPE:-}"
 FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-}"
 PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
 IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
-OUTPUT_FORMAT="${BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT:=human}"
+SCAN_FORMAT="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:=human}"
 SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
 
 if [[ -z "${SCAN_TYPE}" ]]; then
@@ -39,13 +44,49 @@ if [[ "${SHOW_SECRET_SNIPPETS}" == "true" ]]; then
     args+=("--show-secret-snippets")
 fi
 
-output_formats=("human" "json" "sarif")
-if [[ ${output_formats[*]} =~ ${OUTPUT_FORMAT} ]]; then
-    args+=("--format=${OUTPUT_FORMAT}")
+scan_formats=("human" "json" "sarif")
+if [[ ${scan_formats[*]} =~ ${SCAN_FORMAT} ]]; then
+    args+=("--format=${SCAN_FORMAT}")
 else
-    echo "+++ 🚨 Invalid Output Format: ${OUTPUT_FORMAT}"
-    echo "Valid Formats: ${output_formats[*]}"
+    echo "+++ 🚨 Invalid Scan Format: ${SCAN_FORMAT}"
+    echo "Valid Formats: ${scan_formats[*]}"
     exit 1
+fi
+
+# Define valid formats
+valid_file_formats=("human" "json" "sarif" "csv-zip")
+
+# Default file output which is used for build annotation
+args+=("--output=/scan/result/output,human")
+
+# Declare result array
+declare -a result
+
+# Read file output formats into result array
+if plugin_read_list_into_result "BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"; then
+    declare -A seen_formats
+    for format in "${result[@]}"; do
+        # Multiple output files with the same format are supported
+        # but would need to rework this loop to handle and validate i.e., specifying file names, etc.,
+        #  -o, --output file-outputs             Output to file, can be passed multiple times to output to multiple files with possibly different formats.
+        #                                        Must be specified in the following format: file-path[,file-format[,policy-hits-only[,group-by[,include-audit-policy-hits]]]]
+        #                                        Options for file-format: [csv-zip, human, json, sarif], policy-hits-only: [true, false], group-by: [default, layer, resource], include-audit-policy-hits: [true, false]
+        # Check for duplicates
+        if [[ -n "${seen_formats[$format]:-}" ]]; then
+            echo "+++ ⚠️  Duplicate file output format ignored: ${format}"
+            continue
+        fi
+        seen_formats["$format"]=1
+
+        # Check for invalid formats
+        if in_array "$format" "${valid_file_formats[@]}"; then
+            args+=("--output=/scan/result/output-${format},${format}")
+        else
+            echo "+++ 🚨 Invalid File Output Format: ${format}"
+            echo "Valid Formats: ${valid_file_formats[*]}"
+            exit 1
+        fi
+    done
 fi
 
 ## IAC Scanning Parameters
@@ -133,7 +174,7 @@ dockerImageScan() {
         "${wiz_cli_container}" \
         docker scan --image "$IMAGE" \
         --policy-hits-only \
-        -o /scan/result/output,human,true ${args:+"${args[@]}"}
+        ${args:+"${args[@]}"}
 
     exit_code="$?"
     image_name=$(echo "$IMAGE" | cut -d "/" -f 2)
@@ -158,7 +199,6 @@ iacScan() {
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container}" \
         iac scan \
-        -o /scan/result/output,human \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
 
@@ -186,7 +226,6 @@ dirScan() {
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container}" \
         dir scan \
-        -o /scan/result/output,human \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
 

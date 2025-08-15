@@ -172,10 +172,14 @@ Used when `scan-type` is `iac`.
 
 The path to image file, if the `scan-type` is `docker`.
 
-### `output-format` (Optional, string): `human | json | sarif`
+### `scan-format` (Optional, string): `human | json | sarif`
 
 Scans output format.
 Defaults to: `human`
+
+### `file-output-format` (Optional, string or array): `human | json | sarif | csv-zip`
+
+Generates an additional output file with the specified format.
 
 ### `parameter-files` (Optional, string)
 
@@ -197,7 +201,7 @@ Defaults to: `false`
 To run the tests:
 
 ```shell
-docker-compose run --rm tests
+docker compose run --rm tests
 ```
 
 ## Contributing

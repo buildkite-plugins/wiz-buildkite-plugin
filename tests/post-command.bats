@@ -104,12 +104,62 @@ setup() {
   assert_failure
 }
 
-@test "Invalid Output Format" {
+@test "Invalid Scan Format" {
   export WIZ_API_SECRET="secret"
-  export BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT="wrong-format"
+  export BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT="wrong-format"
 
   run "$PWD/hooks/post-command"
-  assert_output --partial "+++ 🚨 Invalid Output Format: $BUILDKITE_PLUGIN_WIZ_OUTPUT_FORMAT"
+  assert_output --partial "+++ 🚨 Invalid Scan Format: $BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT"
   
+  assert_failure
+}
+
+@test "Invalid File Output Format" {
+  export WIZ_API_SECRET="secret"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT="wrong-format"
+
+  run "$PWD/hooks/post-command"
+  assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"
+
+  assert_failure
+}
+
+@test "Invalid File Output Format (multiple)" {
+  export WIZ_API_SECRET="secret"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="wrong-format"
+
+  run "$PWD/hooks/post-command"
+  assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
+
+  assert_failure
+}
+
+@test "Duplicate File Output Formats" {
+  export WIZ_API_SECRET="secret"
+  export WIZ_API_ID="test"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
+
+  stub docker : 'exit 0'
+  mkdir -p "$WIZ_DIR"
+  touch "$WIZ_DIR/key"
+
+  run "$PWD/hooks/post-command"
+  assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
+
+  assert_success
+}
+
+@test "Invalid File Output Format (multiple with duplicates)" {
+  export WIZ_API_SECRET="secret"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2="wrong-format"
+  
+  run "$PWD/hooks/post-command"
+  assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
+  assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2"
+
   assert_failure
 }
