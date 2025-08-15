@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Used to generate the Wiz CLI arguments, including using the scan type for specific arguments
 # $1 - Scan Type
