@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 # Used to generate the Wiz CLI arguments, including using the scan type for specific arguments
 # $1 - Scan Type
@@ -117,6 +119,16 @@ function setupWiz() {
     local wiz_container_image="${1}"
     local wiz_dir="${2}"
 
+    if [ -z "${wiz_container_image}" ]; then
+        echo "+++ 🚨 Wiz CLI container image not specified"
+        exit 1
+    fi
+        
+    if [ -z "${wiz_dir}" ]; then
+        echo "+++ 🚨 Wiz directory not specified"
+        return 1
+    fi
+
     echo "Setting up and authenticating wiz"
     validateWizClientCredentials
     mkdir -p "$wiz_dir"
@@ -131,7 +143,7 @@ function setupWiz() {
 
     # check that wiz-auth work expected, and a file in WIZ_DIR is created
     if [ -z "$(ls -A "${wiz_dir}")" ]; then
-        echo "Wiz authentication failed, please confirm the credentials are set for WIZ_CLIENT_ID and WIZ_CLIENT_SECRET"
+        echo "+++ 🚨 Wiz authentication failed, please confirm the credentials are set for WIZ_CLIENT_ID and WIZ_CLIENT_SECRET"
         exit 1
     else
         echo "Authenticated successfully"
