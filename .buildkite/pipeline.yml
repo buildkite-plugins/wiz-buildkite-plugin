@@ -6,13 +6,13 @@ steps:
 
   - label: ":shell: Shellcheck"
     plugins:
-      - shellcheck#v1.3.0:
+      - shellcheck#v1.4.0:
           files:
             - hooks/**
             - lib/**
 
   - label: ":shell: Tests"
     plugins:
-      - plugin-tester#v1.1.1:
+      - plugin-tester#v1.2.0:
           folders:
             - tests

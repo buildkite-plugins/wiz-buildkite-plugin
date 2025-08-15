@@ -4,19 +4,15 @@ set -uo pipefail
 
 DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-# shellcheck source=lib/shared.bash
-. "$DIR/../lib/shared.bash"
-
 # shellcheck source=lib/plugin.bash
 . "$DIR/../lib/plugin.bash"
+
+# shellcheck source=lib/shared.bash
+. "$DIR/../lib/shared.bash"
 
 WIZ_DIR="$HOME/.wiz"
 SCAN_TYPE="${BUILDKITE_PLUGIN_WIZ_SCAN_TYPE:-}"
 FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-}"
-PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
-IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
-SCAN_FORMAT="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:=human}"
-SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
 
 if [[ -z "${SCAN_TYPE}" ]]; then
     echo "+++ 🚨 Missing scan type. Possible values: 'iac', 'docker', 'dir'"
@@ -28,212 +24,22 @@ if [[ "${SCAN_TYPE}" == "docker" && -z "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}"
     exit 1
 fi
 
-##
-# Wiz CLI Parameters
-##
-
-args=()
-
-## Global Parameters
-
-if [[ "${SHOW_SECRET_SNIPPETS}" == "true" ]]; then
-    args+=("--show-secret-snippets")
-fi
-
-scan_formats=("human" "json" "sarif")
-if [[ ${scan_formats[*]} =~ ${SCAN_FORMAT} ]]; then
-    args+=("--format=${SCAN_FORMAT}")
-else
-    echo "+++ 🚨 Invalid Scan Format: ${SCAN_FORMAT}"
-    echo "Valid Formats: ${scan_formats[*]}"
-    exit 1
-fi
-
-# Define valid formats
-valid_file_formats=("human" "json" "sarif" "csv-zip")
-
-# Default file output which is used for build annotation
-args+=("--output=/scan/result/output,human")
-
-# Declare result array
-declare -a result
-
-# Read file output formats into result array
-if plugin_read_list_into_result "BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"; then
-    declare -A seen_formats
-    for format in "${result[@]}"; do
-        # Multiple output files with the same format are supported
-        # but would need to rework this loop to handle and validate i.e., specifying file names, etc.,
-        #  -o, --output file-outputs             Output to file, can be passed multiple times to output to multiple files with possibly different formats.
-        #                                        Must be specified in the following format: file-path[,file-format[,policy-hits-only[,group-by[,include-audit-policy-hits]]]]
-        #                                        Options for file-format: [csv-zip, human, json, sarif], policy-hits-only: [true, false], group-by: [default, layer, resource], include-audit-policy-hits: [true, false]
-        # Check for duplicates
-        if [[ -n "${seen_formats[$format]:-}" ]]; then
-            echo "+++ ⚠️  Duplicate file output format ignored: ${format}"
-            continue
-        fi
-        seen_formats["$format"]=1
-
-        # Check for invalid formats
-        if in_array "$format" "${valid_file_formats[@]}"; then
-            args+=("--output=/scan/result/output-${format},${format}")
-        else
-            echo "+++ 🚨 Invalid File Output Format: ${format}"
-            echo "Valid Formats: ${valid_file_formats[*]}"
-            exit 1
-        fi
-    done
-fi
-
-## IAC Scanning Parameters
-
-if [[ "${SCAN_TYPE}" == "iac" ]]; then
-
-    if [[ -n "${IAC_TYPE}" ]]; then
-        args+=("--types=${IAC_TYPE}")
-    fi
-
-    if [[ -n "${PARAMETER_FILES}" ]]; then
-        args+=("--parameter-files=${PARAMETER_FILES}")
-    fi
-fi
-
-# Get the architecture of the machine for running the container image due to "latest" not being multi-architecture
-# Available images: `latest`, `latest-amd64` and `latest-arm64`
-# therefore default case will use `latest`
-
-architecture=$(uname -m)
-container_image_tag="latest"
-
-case $architecture in
-x86_64)
-    container_image_tag+="-amd64"
-    ;;
-arm64 | aarch64)
-    container_image_tag+="-arm64"
-    ;;
-*) ;;
-esac
-
-wiz_cli_container_repository="wiziocli.azurecr.io/wizcli"
-wiz_cli_container="${wiz_cli_container_repository}:${container_image_tag}"
-
-#$1 type, $2 name, $3 pass/fail, $4 result file
-buildAnnotation() {
-    annotation_file=${RANDOM:0:2}-annotation.md
-    docker_or_iac=$(if [ "$1" = "docker" ]; then echo "Wiz Docker Image Scan"; else echo "Wiz IaC Scan"; fi)
-    pass_or_fail=$(if [ "$3" = true ]; then echo 'meets'; else echo 'does not meet'; fi)
-    summary="${docker_or_iac} for ${2} ${pass_or_fail} policy requirements"
-    # we need to create a new file to avoid conflicts, we need scan type, name, pass/fail
-    cat <<EOF >>./"${annotation_file}"
-<details>
-<summary>$summary.</summary>
-
-\`\`\`term
-$(cat "$4")
-\`\`\`
-
-</details>
-EOF
-    printf "%b\n" "$(cat ./"${annotation_file}")"
-}
-
-dockerImageScan() {
-    mkdir -p result
-    # TODO check feasibility of mount/mountWithLayers
-    IMAGE="${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}"
-    # make sure local docker has the image
-    docker pull "$IMAGE"
-    docker run \
-        --rm -it \
-        --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
-        --mount type=bind,src="$PWD",dst=/scan \
-        --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly \
-        "${wiz_cli_container}" \
-        docker scan --image "$IMAGE" \
-        --policy-hits-only \
-        ${args:+"${args[@]}"}
-
-    exit_code="$?"
-    image_name=$(echo "$IMAGE" | cut -d "/" -f 2)
-    # FIXME: Linktree Specific Env. Var.
-    # buildkite-agent artifact upload result --log-level info
-    case $exit_code in
-    0)
-        buildAnnotation "docker" "$image_name" true "result/output" | buildkite-agent annotate --append --style 'success' --context 'ctx-wiz-docker-success'
-        ;;
-    *)
-        buildAnnotation "docker" "$image_name" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-docker-warning' --style 'warning'
-        ;;
-    esac
-    exit $exit_code
-}
-
-iacScan() {
-    mkdir -p result
-    docker run \
-        --rm -it \
-        --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
-        --mount type=bind,src="$PWD",dst=/scan \
-        "${wiz_cli_container}" \
-        iac scan \
-        --name "$BUILDKITE_JOB_ID" \
-        --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
-
-    exit_code="$?"
-    case $exit_code in
-    0)
-        buildAnnotation "iac" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-success' --style 'success'
-        ;;
-    *)
-        buildAnnotation "iac" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-warning' --style 'warning'
-        ;;
-    esac
-    # buildkite-agent artifact upload "result/**/*" --log-level info
-    # this post step will be used in template to check the step was run
-    echo "${BUILDKITE_BUILD_ID}" >check-file && buildkite-agent artifact upload check-file
-
-    exit $exit_code
-}
-
-dirScan() {
-    mkdir -p result
-    docker run \
-        --rm -it \
-        --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly \
-        --mount type=bind,src="$PWD",dst=/scan \
-        "${wiz_cli_container}" \
-        dir scan \
-        --name "$BUILDKITE_JOB_ID" \
-        --path "/scan/$FILE_PATH" ${args:+"${args[@]}"}
-
-    exit_code="$?"
-    case $exit_code in
-    0)
-        buildAnnotation "dir" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-success' --style 'success'
-        ;;
-    *)
-        buildAnnotation "dir" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-warning' --style 'warning'
-        ;;
-    esac
-    # buildkite-agent artifact upload "result/**/*" --log-level info
-    # this post step will be used in template to check the step was run
-    echo "${BUILDKITE_BUILD_ID}" >check-file && buildkite-agent artifact upload check-file
-
-    exit $exit_code
-}
+declare -a cli_args
+# shellcheck disable=SC2207
+cli_args=($(get_wiz_cli_args "${SCAN_TYPE}"))
+wiz_cli_container_image=$(get_wiz_cli_container)
 
 case "${SCAN_TYPE}" in
 iac)
-    setupWiz "$wiz_cli_container" "$WIZ_DIR"
-    iacScan
+    setupWiz "$wiz_cli_container_image" "$WIZ_DIR"
+    iacScan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 docker)
-    setupWiz "$wiz_cli_container" "$WIZ_DIR"
-    dockerImageScan
+    setupWiz "$wiz_cli_container_image" "$WIZ_DIR"
+    dockerImageScan "$wiz_cli_container_image" "$WIZ_DIR" "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS}" "${cli_args[@]}"
     ;;
 dir)
-    setupWiz "$wiz_cli_container" "$WIZ_DIR"
-    dirScan
+    setupWiz "$wiz_cli_container_image" "$WIZ_DIR"
+    dirScan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 esac
