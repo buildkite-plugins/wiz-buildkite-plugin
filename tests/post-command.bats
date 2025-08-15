@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 load "$BATS_PLUGIN_PATH/load.bash"
+load "${BATS_TEST_DIRNAME}/../lib/plugin.bash"
 
 # Uncomment the following line to debug stub failures
 # export BUILDKITE_AGENT_STUB_DEBUG=/dev/tty
@@ -9,12 +10,18 @@ setup() {
   export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="docker"
   export BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS="ubuntu:22.04"
   export WIZ_DIR="$HOME/.wiz"
+  export WIZ_CLIENT_ID="test"
+  export WIZ_CLIENT_SECRET="secret"
+  export WIZ_CLI_CONTAINER="wiziocli.azurecr.io/wizcli:latest"
+}
+
+teardown() {
+  if [ -d "$WIZ_DIR" ]; then
+    rm -rf "$WIZ_DIR"
+  fi
 }
 
 @test "Captures docker exit code and exits plugin when non-0 status" {
-
-  export WIZ_API_ID="test"
-  export WIZ_API_SECRET="secret"
 
   stub docker : 'exit 1'
   mkdir -p "$WIZ_DIR"
@@ -23,65 +30,48 @@ setup() {
   run "$PWD/hooks/post-command"
   #todo test docker scan
   assert_failure
-  #cleanup
-  rm "$WIZ_DIR/key"
 }
 
-@test "Authenticates to wiz using \$WIZ_API_SECRET" {
-  export WIZ_API_ID="test"
-  export WIZ_API_SECRET="secret"
+@test "Validates Wiz Client Credentials" {
 
-  stub docker : 'exit 0'
-  stub docker : 'exit 0'
-  stub docker : 'exit 0'
-  mkdir -p "$WIZ_DIR"
-  touch "$WIZ_DIR/key"
+  run validateWizClientCredentials
 
-  run "$PWD/hooks/post-command"
-
-  assert_output --partial "Authenticated successfully"
-  #todo test docker scan
   assert_success
-  #cleanup
-  rm "$WIZ_DIR/key"
 }
 
-@test "Authenticates to wiz using \$BUILDKITE_PLUGIN_WIZ_API_SECRET_ENV" {
-  export WIZ_API_ID="test"
-  export BUILDKITE_PLUGIN_WIZ_API_SECRET_ENV="CUSTOM_WIZ_API_SECRET_ENV"
-  export CUSTOM_WIZ_API_SECRET_ENV="secret"
+@test "Invalid Wiz Client Credential (ID)" {
+  unset WIZ_CLIENT_ID
 
-  stub docker : 'exit 0'
-  mkdir -p "$WIZ_DIR"
-  touch "$WIZ_DIR/key"
+  run validateWizClientCredentials
 
-  run "$PWD/hooks/post-command"
-
-  assert_output --partial "Authenticated successfully"
-  #todo test docker scan
-  assert_success
-  #cleanup
-  rm "$WIZ_DIR/key"
-}
-
-@test "No Wiz API Secret password found in \$WIZ_API_SECRET" {
-  export WIZ_API_ID="test"
-  unset WIZ_API_SECRET
-
-  run "$PWD/hooks/post-command"
-
-  assert_output "+++ 🚨 No Wiz API Secret password found in \$WIZ_API_SECRET"
+  assert_output "+++ 🚨 The following required environment variables are not set: WIZ_CLIENT_ID"
   assert_failure
 }
 
-@test "No Wiz API Secret password found in \$CUSTOM_WIZ_API_SECRET_ENV" {
-  export WIZ_API_ID="test"
-  export BUILDKITE_PLUGIN_WIZ_API_SECRET_ENV="CUSTOM_WIZ_API_SECRET_ENV"
-  export CUSTOM_WIZ_API_SECRET_ENV=""
+@test "Invalid Wiz Client Credentials" {
+  unset WIZ_CLIENT_ID
+  unset WIZ_CLIENT_SECRET
 
-  run "$PWD/hooks/post-command"
+  run validateWizClientCredentials
 
-  assert_output "+++ 🚨 No Wiz API Secret password found in \$CUSTOM_WIZ_API_SECRET_ENV"
+  assert_output "+++ 🚨 The following required environment variables are not set: WIZ_CLIENT_ID WIZ_CLIENT_SECRET"
+  assert_failure
+}
+
+@test "Successfully authenticate to Wiz" {
+  mkdir -p "$WIZ_DIR"
+  touch "$WIZ_DIR/key"
+
+  run setupWiz "$WIZ_CLI_CONTAINER" "$WIZ_DIR"
+
+  assert_success
+}
+
+@test "Fail to authenticate to Wiz" {
+
+  run setupWiz "$WIZ_CLI_CONTAINER" "$WIZ_DIR"
+
+  assert_output --partial "Wiz authentication failed, please confirm the credentials are set for WIZ_CLIENT_ID and WIZ_CLIENT_SECRET"
   assert_failure
 }
 
@@ -94,8 +84,6 @@ setup() {
 }
 
 @test "Docker Scan without BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS" {
-  export WIZ_API_ID="test"
-  export WIZ_API_SECRET="secret"
   unset BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS
 
   run "$PWD/hooks/post-command"
@@ -105,7 +93,6 @@ setup() {
 }
 
 @test "Invalid Scan Format" {
-  export WIZ_API_SECRET="secret"
   export BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT="wrong-format"
 
   run "$PWD/hooks/post-command"
@@ -115,7 +102,6 @@ setup() {
 }
 
 @test "Invalid File Output Format" {
-  export WIZ_API_SECRET="secret"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT="wrong-format"
 
   run "$PWD/hooks/post-command"
@@ -125,7 +111,6 @@ setup() {
 }
 
 @test "Invalid File Output Format (multiple)" {
-  export WIZ_API_SECRET="secret"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="wrong-format"
 
@@ -136,12 +121,14 @@ setup() {
 }
 
 @test "Duplicate File Output Formats" {
-  export WIZ_API_SECRET="secret"
-  export WIZ_API_ID="test"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
 
   stub docker : 'exit 0'
+  stub docker : 'exit 0'
+  stub docker : 'exit 0'
+  stub cat : 'exit 0'
+
   mkdir -p "$WIZ_DIR"
   touch "$WIZ_DIR/key"
 
@@ -152,7 +139,6 @@ setup() {
 }
 
 @test "Invalid File Output Format (multiple with duplicates)" {
-  export WIZ_API_SECRET="secret"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2="wrong-format"
