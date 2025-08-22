@@ -26,20 +26,20 @@ fi
 
 declare -a cli_args
 # shellcheck disable=SC2207
-cli_args=($(get_wiz_cli_args "${SCAN_TYPE}"))
-wiz_cli_container_image=$(get_wiz_cli_container)
+cli_args=($(build_wiz_cli_args "${SCAN_TYPE}"))
+wiz_cli_container_image=$(detect_wiz_cli_container)
 
 case "${SCAN_TYPE}" in
 iac)
-    setupWiz "$wiz_cli_container_image" "$WIZ_DIR"
-    iacScan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
+    get_wiz_auth_file "$wiz_cli_container_image" "$WIZ_DIR"
+    iac_scan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 docker)
-    setupWiz "$wiz_cli_container_image" "$WIZ_DIR"
-    dockerImageScan "$wiz_cli_container_image" "$WIZ_DIR" "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS}" "${cli_args[@]}"
+    get_wiz_auth_file "$wiz_cli_container_image" "$WIZ_DIR"
+    docker_image_scan "$wiz_cli_container_image" "$WIZ_DIR" "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS}" "${cli_args[@]}"
     ;;
 dir)
-    setupWiz "$wiz_cli_container_image" "$WIZ_DIR"
-    dirScan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
+    get_wiz_auth_file "$wiz_cli_container_image" "$WIZ_DIR"
+    dir_scan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 esac

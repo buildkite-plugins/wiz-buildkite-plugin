@@ -19,7 +19,7 @@ teardown() {
 }
 
 @test "Validates Wiz Client Credentials" {
-  run validateWizClientCredentials
+  run validate_wiz_client_credentials
 
   assert_success
 }
@@ -27,7 +27,7 @@ teardown() {
 @test "Invalid Wiz Client Credential (ID)" {
   export WIZ_CLIENT_ID=""
 
-  run validateWizClientCredentials
+  run validate_wiz_client_credentials
 
   assert_failure
   assert_output "+++ 🚨 The following required environment variables are not set: WIZ_CLIENT_ID"
@@ -37,7 +37,7 @@ teardown() {
   export WIZ_CLIENT_ID=""
   export WIZ_CLIENT_SECRET=""
 
-  run validateWizClientCredentials
+  run validate_wiz_client_credentials
 
   assert_failure
   assert_output "+++ 🚨 The following required environment variables are not set: WIZ_CLIENT_ID WIZ_CLIENT_SECRET"
@@ -50,7 +50,7 @@ teardown() {
   stub docker \
     'run --rm -it --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET "wiziocli.azurecr.io/wizcli:latest" auth: exit 0'
 
-  run setupWiz "$WIZ_CLI_CONTAINER" "$WIZ_DIR"
+  run get_wiz_auth_file "$WIZ_CLI_CONTAINER" "$WIZ_DIR"
 
   assert_success
 
@@ -61,7 +61,7 @@ teardown() {
   stub docker \
     'run --rm -it --mount type=bind,src="$WIZ_DIR",dst=/cli,readonly -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET "wiziocli.azurecr.io/wizcli:latest" auth: exit 0'
 
-  run setupWiz "$WIZ_CLI_CONTAINER" "$WIZ_DIR"
+  run get_wiz_auth_file "$WIZ_CLI_CONTAINER" "$WIZ_DIR"
 
   assert_failure
   assert_output --partial "Wiz authentication failed, please confirm the credentials are set for WIZ_CLIENT_ID and WIZ_CLIENT_SECRET"
@@ -72,7 +72,7 @@ teardown() {
 @test "Invalid Scan Format" {
   export BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT="wrong-format"
 
-  run get_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
   
   assert_failure
   assert_output --partial "+++ 🚨 Invalid Scan Format: $BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT"
@@ -81,7 +81,7 @@ teardown() {
 @test "Invalid File Output Format" {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT="wrong-format"
 
-  run get_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
   
   assert_failure
   assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"
@@ -91,7 +91,7 @@ teardown() {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="wrong-format"
 
-  run get_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
 
   assert_failure
   assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
@@ -101,7 +101,7 @@ teardown() {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
 
-  run get_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
 
   assert_success
   assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
@@ -112,7 +112,7 @@ teardown() {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2="wrong-format"
   
-  run get_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
 
   assert_failure
   assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
@@ -120,7 +120,7 @@ teardown() {
 }
 
 @test "Valid Wiz CLI Args (default)" {
-  run get_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
 
   assert_success
   assert_output --partial "--format=human --output=/scan/result/output,human"
@@ -131,7 +131,7 @@ teardown() {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="json"
 
-  run get_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
 
   assert_success
   assert_output --partial "--format=json --output=/scan/result/output,human --output=/scan/result/output-human,human --output=/scan/result/output-json,json"
@@ -140,7 +140,7 @@ teardown() {
 @test "Get Wiz CLI Container Image (amd64)" {
   stub uname "-m : echo 'x86_64'"
 
-  run get_wiz_cli_container
+  run detect_wiz_cli_container
 
   assert_success
   assert_output --partial "wiziocli.azurecr.io/wizcli:latest-amd64"
@@ -151,7 +151,7 @@ teardown() {
 @test "Get Wiz CLI Container Image (arm64)" {
   stub uname "-m : echo 'arm64'"
 
-  run get_wiz_cli_container
+  run detect_wiz_cli_container
 
   assert_success
   assert_output --partial "wiziocli.azurecr.io/wizcli:latest-arm64"
@@ -162,7 +162,7 @@ teardown() {
 @test "Get Wiz CLI Container Image (unknown architecture)" {
   stub uname "-m : echo 'unknown'"
 
-  run get_wiz_cli_container
+  run detect_wiz_cli_container
 
   assert_success
   assert_output --partial "wiziocli.azurecr.io/wizcli:latest"
