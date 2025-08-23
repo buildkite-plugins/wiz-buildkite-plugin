@@ -134,7 +134,7 @@ function get_wiz_auth_file() {
     mkdir -p "$wiz_dir"
 
     docker run \
-        --rm -it \
+        --rm \
         --mount type=bind,src="${wiz_dir}",dst=/cli \
         -e WIZ_CLIENT_ID \
         -e WIZ_CLIENT_SECRET \
@@ -192,7 +192,7 @@ function docker_image_scan() {
     docker pull "$image"
 
     docker run \
-        --rm -it \
+        --rm \
         --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly \
@@ -230,7 +230,7 @@ function iac_scan() {
 
     mkdir -p result
     docker run \
-        --rm -it \
+        --rm \
         --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container_image}" \
@@ -269,7 +269,7 @@ function dir_scan() {
 
     mkdir -p result
     docker run \
-        --rm -it \
+        --rm \
         --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container_image}" \
