@@ -11,14 +11,14 @@ function build_wiz_cli_args() {
     IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
     SCAN_FORMAT="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:=human}"
     SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
-    args=()
+    local -a args=()
 
     # Global Parameters
     if [[ "${SHOW_SECRET_SNIPPETS}" == "true" ]]; then
         args+=("--show-secret-snippets")
     fi
 
-    scan_formats=("human" "json" "sarif")
+    local scan_formats=("human" "json" "sarif")
     if [[ ${scan_formats[*]} =~ ${SCAN_FORMAT} ]]; then
         args+=("--format=${SCAN_FORMAT}")
     else
@@ -28,7 +28,7 @@ function build_wiz_cli_args() {
     fi
 
     # Define valid formats
-    valid_file_formats=("human" "json" "sarif" "csv-zip")
+    local valid_file_formats=("human" "json" "sarif" "csv-zip")
 
     # Default file output which is used for build annotation
     args+=("--output=/scan/result/output,human")
@@ -96,16 +96,16 @@ function detect_wiz_cli_container() {
     *) ;;
     esac
 
-    wiz_cli_container_repository="wiziocli.azurecr.io/wizcli"
+    local wiz_cli_container_repository="wiziocli.azurecr.io/wizcli"
     echo "${wiz_cli_container_repository}:${container_image_tag}"
 }
 
 function validate_wiz_client_credentials() {
     local missing_vars=()
-    
-    [ -z "${WIZ_CLIENT_ID}" ] && missing_vars+=("WIZ_CLIENT_ID")
-    [ -z "${WIZ_CLIENT_SECRET}" ] && missing_vars+=("WIZ_CLIENT_SECRET")
-    
+
+    [ -z "${WIZ_CLIENT_ID:-}" ] && missing_vars+=("WIZ_CLIENT_ID")
+    [ -z "${WIZ_CLIENT_SECRET:-}" ] && missing_vars+=("WIZ_CLIENT_SECRET")
+
     if [ ${#missing_vars[@]} -gt 0 ]; then
         echo "+++ 🚨 The following required environment variables are not set: ${missing_vars[*]}"
         exit 1
@@ -116,8 +116,8 @@ function validate_wiz_client_credentials() {
 # $1 - Wiz CLI Container Image 
 # $2 - Directory to store auth file
 function get_wiz_auth_file() {
-    local wiz_container_image="${1}"
-    local wiz_dir="${2}"
+    local wiz_container_image="${1:-}"
+    local wiz_dir="${2:-}"
 
     if [ -z "${wiz_container_image}" ]; then
         echo "+++ 🚨 Wiz CLI container image not specified"
@@ -180,10 +180,11 @@ EOF
 # $3 - Image Address
 # $4 - CLI Arguments
 function docker_image_scan() {
-    local wiz_cli_container_image="$1"
-    local wiz_dir="$2"
-    local image="$3"    
-    local -a cli_args=("${@:4}")
+    local wiz_cli_container_image="${1:-}"
+    local wiz_dir="${2:-}"
+    local image="${3:-}"
+    shift 3
+    local -a cli_args=("${@}")
 
     mkdir -p result
 
@@ -221,10 +222,11 @@ function docker_image_scan() {
 # $3 - File Path
 # $4 - CLI Arguments
 function iac_scan() {
-    local wiz_cli_container_image="$1"
-    local wiz_dir="$2"
-    local file_path="$3"
-    local -a cli_args=("${@:4}")
+    local wiz_cli_container_image="${1:-}"
+    local wiz_dir="${2:-}"
+    local file_path="${3:-}"
+    shift 3
+    local -a cli_args=("${@}")
 
     mkdir -p result
     docker run \
@@ -258,10 +260,11 @@ function iac_scan() {
 # $3 - File Path
 # $4 - CLI Arguments
 function dir_scan() {
-    local wiz_cli_container_image="$1"
-    local wiz_dir="$2"
-    local file_path="$3"
-    local -a cli_args=("${@:4}")
+    local wiz_cli_container_image="${1:-}"
+    local wiz_dir="${2:-}"
+    local file_path="${3:-}"
+    shift 3
+    local -a cli_args=("${@}")
 
     mkdir -p result
     docker run \
