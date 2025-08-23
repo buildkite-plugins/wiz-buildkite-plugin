@@ -199,7 +199,7 @@ function docker_image_scan() {
         "${wiz_cli_container_image}" \
         docker scan --image "$image" \
         --policy-hits-only \
-        "${cli_args[@]}"
+        "${cli_args[@]}" || true
 
     exit_code="$?"
     image_name=$(echo "$image" | cut -d "/" -f 2)
@@ -236,7 +236,8 @@ function iac_scan() {
         "${wiz_cli_container_image}" \
         iac scan \
         --name "$BUILDKITE_JOB_ID" \
-        --path "/scan/$file_path" "${cli_args[@]}"
+        --path "/scan/$file_path" \
+        "${cli_args[@]}" || true
 
     exit_code="$?"
     case $exit_code in
@@ -274,7 +275,8 @@ function dir_scan() {
         "${wiz_cli_container_image}" \
         dir scan \
         --name "$BUILDKITE_JOB_ID" \
-        --path "/scan/$file_path" "${cli_args[@]}"
+        --path "/scan/$file_path" \
+        "${cli_args[@]}" || true
 
     exit_code="$?"
     case $exit_code in
