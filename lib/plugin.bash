@@ -201,18 +201,16 @@ function docker_image_scan() {
         --policy-hits-only \
         "${cli_args[@]}" || true
 
-    exit_code="$?"
-    image_name=$(echo "$image" | cut -d "/" -f 2)
-    # FIXME: Linktree Specific Env. Var.
-    # buildkite-agent artifact upload result --log-level info
-    case $exit_code in
-    0)
+    local exit_code="$?"
+    local image_name
+    image_name="$(echo "$image" | cut -d "/" -f 2)"
+    
+    if [[ $exit_code -eq 0 ]]; then
         build_annotation "docker" "$image_name" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-docker-success' --style 'success'
-        ;;
-    *)
+    else
         build_annotation "docker" "$image_name" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-docker-warning' --style 'warning'
-        ;;
-    esac
+    fi
+
     exit $exit_code
 }
 
@@ -239,15 +237,14 @@ function iac_scan() {
         --path "/scan/$file_path" \
         "${cli_args[@]}" || true
 
-    exit_code="$?"
-    case $exit_code in
-    0)
+    local exit_code="$?"
+
+    if [[ $exit_code -eq 0 ]]; then
         build_annotation "iac" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-success' --style 'success'
-        ;;
-    *)
-        build_annotation "iac" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-warning' --style 'warning'
-        ;;
-    esac
+    else
+        build_annotation "iac" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-warning' --style 'warning'    
+    fi
+
     # buildkite-agent artifact upload "result/**/*" --log-level info
     # this post step will be used in template to check the step was run
     echo "${BUILDKITE_BUILD_ID}" >check-file && buildkite-agent artifact upload check-file
@@ -279,14 +276,13 @@ function dir_scan() {
         "${cli_args[@]}" || true
 
     exit_code="$?"
-    case $exit_code in
-    0)
+    
+    if [[ $exit_code -eq 0 ]]; then
         build_annotation "dir" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-success' --style 'success'
-        ;;
-    *)
+    else
         build_annotation "dir" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-warning' --style 'warning'
-        ;;
-    esac
+    fi
+    
     # buildkite-agent artifact upload "result/**/*" --log-level info
     # this post step will be used in template to check the step was run
     echo "${BUILDKITE_BUILD_ID}" >check-file && buildkite-agent artifact upload check-file
