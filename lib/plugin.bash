@@ -191,6 +191,7 @@ function docker_image_scan() {
     # make sure local docker has the image
     docker pull "$image"
 
+    local -i exit_code=0
     docker run \
         --rm \
         --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
@@ -199,9 +200,8 @@ function docker_image_scan() {
         "${wiz_cli_container_image}" \
         docker scan --image "$image" \
         --policy-hits-only \
-        "${cli_args[@]}" || true
+        "${cli_args[@]}" || exit_code=$?
 
-    local exit_code="$?"
     local image_name
     image_name="$(echo "$image" | cut -d "/" -f 2)"
     
@@ -227,6 +227,8 @@ function iac_scan() {
     local -a cli_args=("${@}")
 
     mkdir -p result
+
+    local -i exit_code=0
     docker run \
         --rm \
         --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
@@ -235,9 +237,7 @@ function iac_scan() {
         iac scan \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$file_path" \
-        "${cli_args[@]}" || true
-
-    local exit_code="$?"
+        "${cli_args[@]}" || exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
         build_annotation "iac" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-success' --style 'success'
@@ -265,6 +265,8 @@ function dir_scan() {
     local -a cli_args=("${@}")
 
     mkdir -p result
+
+    local -i exit_code=0
     docker run \
         --rm \
         --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
@@ -273,9 +275,7 @@ function dir_scan() {
         dir scan \
         --name "$BUILDKITE_JOB_ID" \
         --path "/scan/$file_path" \
-        "${cli_args[@]}" || true
-
-    exit_code="$?"
+        "${cli_args[@]}" || exit_code=$?
     
     if [[ $exit_code -eq 0 ]]; then
         build_annotation "dir" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-success' --style 'success'
