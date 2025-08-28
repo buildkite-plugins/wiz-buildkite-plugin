@@ -4,6 +4,9 @@ load "$BATS_PLUGIN_PATH/load.bash"
 load "${BATS_TEST_DIRNAME}/../lib/plugin.bash"
 load "${BATS_TEST_DIRNAME}/../lib/shared.bash"
 
+# export DOCKER_STUB_DEBUG=/dev/tty
+# export BUILDKITE_AGENT_STUB_DEBUG=/dev/tty
+
 setup() {
   export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="docker"
   export WIZ_DIR="$HOME/.wiz"
