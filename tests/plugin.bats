@@ -185,3 +185,22 @@ teardown() {
 
   unstub uname
 }
+
+@test "Build Annotations (no findings)" {
+  
+  run build_annotation "docker" "ubuntu:latest" true "result/output"
+
+  assert_success
+
+  assert_output --partial "<summary>Wiz Docker Image Scan for ubuntu:latest meets policy requirements.</summary>"
+}
+
+@test "Build Annotations (findings)" {
+
+  run build_annotation "docker" "ubuntu:latest" false "result/output"
+
+  assert_success
+
+  assert_output --partial "<summary>Wiz Docker Image Scan for ubuntu:latest does not meet policy requirements.</summary>"
+}
+
