@@ -204,3 +204,57 @@ teardown() {
   assert_output --partial "<summary>Wiz Docker Image Scan for ubuntu:latest does not meet policy requirements.</summary>"
 }
 
+@test "Docker Scan (success)" {
+  export BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS="ubuntu:latest"
+  export cli_args=("--format=human" "--output=/scan/result/output,human")
+
+  mkdir -p "$WIZ_DIR"
+
+  mkdir -p "result"
+  touch "result/output"
+
+  stub docker \
+    'pull "ubuntu:latest" : exit 0' \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli,readonly --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly wiziocli.azurecr.io/wizcli:latest docker scan --image ubuntu:latest --policy-hits-only --format=human --output=/scan/result/output,human : echo "Docker image scanned without policy hits"'
+
+  stub buildkite-agent \
+    'annotate --append --context 'ctx-wiz-docker-success' --style 'success' : echo "Annotated Build"'
+
+  run docker_image_scan "${WIZ_CLI_CONTAINER}" "${WIZ_DIR}" "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS}" "${cli_args[@]}"
+
+  assert_success
+
+  assert_output --partial "Docker image scanned without policy hits"
+  assert_output --partial "Annotated Build"
+
+  unstub docker
+  unstub buildkite-agent
+}
+
+@test "Docker Scan (failure)" {
+  export BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS="ubuntu:latest"
+  export cli_args=("--format=human" "--output=/scan/result/output,human")
+
+  mkdir -p "$WIZ_DIR"
+
+  mkdir -p "result"
+  touch "result/output"
+
+  stub docker \
+    'pull "ubuntu:latest" : exit 0' \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli,readonly --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly wiziocli.azurecr.io/wizcli:latest docker scan --image ubuntu:latest --policy-hits-only --format=human --output=/scan/result/output,human : echo "Docker image scanned with policy hits"; exit 1'
+  
+  stub buildkite-agent \
+    'annotate --append --context 'ctx-wiz-docker-warning' --style 'warning' : echo "Annotated Build"'
+
+  run docker_image_scan "${WIZ_CLI_CONTAINER}" "${WIZ_DIR}" "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS}" "${cli_args[@]}"
+
+  assert_failure
+  
+  assert_output --partial "Docker image scanned with policy hits"
+  assert_output --partial "Annotated Build"
+
+  unstub docker
+  unstub buildkite-agent
+}
+
