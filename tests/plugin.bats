@@ -258,3 +258,65 @@ teardown() {
   unstub buildkite-agent
 }
 
+@test "IaC Scan (success)" {
+  export BUILDKITE_JOB_ID="1234-abcd"
+  export BUILDKITE_BUILD_ID="1234-abcd"
+  export BUILDKITE_LABEL="iac-scan"
+  export FILE_PATH="iac/to/scan"
+  export cli_args=("--format=human" "--output=/scan/result/output,human")
+
+  mkdir -p "$WIZ_DIR"
+
+  mkdir -p "result"
+  touch "result/output"
+
+  stub docker \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli,readonly --mount type=bind,src=/plugin,dst=/scan wiziocli.azurecr.io/wizcli:latest iac scan --name 1234-abcd --path /scan/iac/to/scan --format=human --output=/scan/result/output,human : echo "IaC scanned without policy hits"'
+
+  stub buildkite-agent \
+    'annotate --append --context 'ctx-wiz-iac-success' --style 'success' : echo "Annotated Build"' \
+    'artifact upload check-file : echo "Uploaded check-file"'
+
+  run iac_scan "${WIZ_CLI_CONTAINER}" "${WIZ_DIR}" "${FILE_PATH}" "${cli_args[@]}"
+
+  assert_success
+
+  assert_output --partial "IaC scanned without policy hits"
+  assert_output --partial "Annotated Build"
+  assert_output --partial "Uploaded check-file"
+
+  unstub docker
+  unstub buildkite-agent
+}
+
+@test "IaC Scan (failure)" {
+  export BUILDKITE_JOB_ID="1234-abcd"
+  export BUILDKITE_BUILD_ID="1234-abcd"
+  export BUILDKITE_LABEL="iac-scan"
+  export FILE_PATH="iac/to/scan"
+  export cli_args=("--format=human" "--output=/scan/result/output,human")
+
+  mkdir -p "$WIZ_DIR"
+
+  mkdir -p "result"
+  touch "result/output"
+
+  stub docker \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli,readonly --mount type=bind,src=/plugin,dst=/scan wiziocli.azurecr.io/wizcli:latest iac scan --name 1234-abcd --path /scan/iac/to/scan --format=human --output=/scan/result/output,human : echo "IaC scanned with policy hits"; exit 1'
+
+  stub buildkite-agent \
+    'annotate --append --context 'ctx-wiz-iac-warning' --style 'warning' : echo "Annotated Build"' \
+    'artifact upload check-file : echo "Uploaded check-file"'
+
+  run iac_scan "${WIZ_CLI_CONTAINER}" "${WIZ_DIR}" "${FILE_PATH}" "${cli_args[@]}"
+
+  assert_failure
+
+  assert_output --partial "IaC scanned with policy hits"
+  assert_output --partial "Annotated Build"
+  assert_output --partial "Uploaded check-file"
+
+  unstub docker
+  unstub buildkite-agent
+}
+
