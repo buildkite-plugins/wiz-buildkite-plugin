@@ -19,6 +19,19 @@ teardown() {
   if [ -d "$WIZ_DIR" ]; then
     rm -rf "$WIZ_DIR"
   fi
+
+  if  [ -d result ]; then
+    rm -rfd result
+  fi
+
+  # shellcheck disable=SC2144
+  if [ -a *-annotation.md ]; then
+    rm *-annotation.md
+  fi
+
+  if [ -a check-file ]; then
+    rm check-file
+  fi
 }
 
 @test "Validates Wiz Client Credentials" {
