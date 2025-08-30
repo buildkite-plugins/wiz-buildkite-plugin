@@ -20,8 +20,8 @@ teardown() {
     rm -rf "$WIZ_DIR"
   fi
 
-  if  [ -d result ]; then
-    rm -rfd result
+  if [ -d result ]; then
+    rm -rf result
   fi
 
   # shellcheck disable=SC2144
