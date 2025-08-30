@@ -28,18 +28,16 @@ declare -a cli_args
 # shellcheck disable=SC2207
 cli_args=($(build_wiz_cli_args "${SCAN_TYPE}"))
 wiz_cli_container_image=$(detect_wiz_cli_container)
+get_wiz_auth_file "$wiz_cli_container_image" "$WIZ_DIR"
 
 case "${SCAN_TYPE}" in
 iac)
-    get_wiz_auth_file "$wiz_cli_container_image" "$WIZ_DIR"
     iac_scan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 docker)
-    get_wiz_auth_file "$wiz_cli_container_image" "$WIZ_DIR"
     docker_image_scan "$wiz_cli_container_image" "$WIZ_DIR" "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS}" "${cli_args[@]}"
     ;;
 dir)
-    get_wiz_auth_file "$wiz_cli_container_image" "$WIZ_DIR"
     dir_scan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 esac
