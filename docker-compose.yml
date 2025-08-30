@@ -2,7 +2,8 @@ services:
   tests:
     image: buildkite/plugin-tester:v4.2.0
     volumes:
-      - ".:/plugin:ro"
+      # requiring RW for test that expect Dirs/Files to exist or are created
+      - ".:/plugin:rw"
   lint:
     image: buildkite/plugin-linter:v2.1.0
     command: ['--id', 'wiz']
