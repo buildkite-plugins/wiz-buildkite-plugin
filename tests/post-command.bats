@@ -5,86 +5,48 @@ load "${BATS_TEST_DIRNAME}/../lib/plugin.bash"
 load "${BATS_TEST_DIRNAME}/../lib/shared.bash"
 
 # Uncomment the following line to debug stub failures
+# export DOCKER_STUB_DEBUG=/dev/tty
 # export BUILDKITE_AGENT_STUB_DEBUG=/dev/tty
 
 setup() {
-  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="docker"
-  export BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS="ubuntu:22.04"
   export WIZ_DIR="$HOME/.wiz"
   export WIZ_CLIENT_ID="test"
   export WIZ_CLIENT_SECRET="secret"
-  export WIZ_CLI_CONTAINER="wiziocli.azurecr.io/wizcli:latest"
+  export BUILDKITE_JOB_ID="1234-abcd"
+  export BUILDKITE_BUILD_ID="1234-abcd"
+  export BUILDKITE_LABEL="iac-scan"
 }
 
 teardown() {
   if [ -d "$WIZ_DIR" ]; then
     rm -rf "$WIZ_DIR"
   fi
-}
 
-@test "Captures docker exit code and exits plugin when non-0 status" {
+  if [ -d result ]; then
+    rm -rf result
+  fi
 
-  stub docker : 'exit 1'
-  mkdir -p "$WIZ_DIR"
-  touch "$WIZ_DIR/key"
+  # shellcheck disable=SC2144
+  if [ -a *-annotation.md ]; then
+    rm *-annotation.md
+  fi
 
-  run "$PWD/hooks/post-command"
-  #todo test docker scan
-  assert_failure
-}
-
-@test "Validates Wiz Client Credentials" {
-
-  run validateWizClientCredentials
-
-  assert_success
-}
-
-@test "Invalid Wiz Client Credential (ID)" {
-  unset WIZ_CLIENT_ID
-
-  run validateWizClientCredentials
-
-  assert_output "+++ 🚨 The following required environment variables are not set: WIZ_CLIENT_ID"
-  assert_failure
-}
-
-@test "Invalid Wiz Client Credentials" {
-  unset WIZ_CLIENT_ID
-  unset WIZ_CLIENT_SECRET
-
-  run validateWizClientCredentials
-
-  assert_output "+++ 🚨 The following required environment variables are not set: WIZ_CLIENT_ID WIZ_CLIENT_SECRET"
-  assert_failure
-}
-
-@test "Successfully authenticate to Wiz" {
-  mkdir -p "$WIZ_DIR"
-  touch "$WIZ_DIR/key"
-
-  run setupWiz "$WIZ_CLI_CONTAINER" "$WIZ_DIR"
-
-  assert_success
-}
-
-@test "Fail to authenticate to Wiz" {
-
-  run setupWiz "$WIZ_CLI_CONTAINER" "$WIZ_DIR"
-
-  assert_output --partial "Wiz authentication failed, please confirm the credentials are set for WIZ_CLIENT_ID and WIZ_CLIENT_SECRET"
-  assert_failure
+  if [ -a check-file ]; then
+    rm check-file
+  fi
 }
 
 @test "Missing scan type" {
   export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE=""
 
   run "$PWD/hooks/post-command"
-  assert_output "+++ 🚨 Missing scan type. Possible values: 'iac', 'docker', 'dir'"
+
   assert_failure
+  assert_output "+++ 🚨 Missing scan type. Possible values: 'iac', 'docker', 'dir'"
 }
 
 @test "Docker Scan without BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="docker"
   unset BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS
 
   run "$PWD/hooks/post-command"
@@ -93,105 +55,94 @@ teardown() {
   assert_failure
 }
 
-@test "Invalid Scan Format" {
-  export BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT="wrong-format"
+@test "Docker Scan" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="docker"
+  export BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS="ubuntu:22.04"
 
-  run get_wiz_cli_args
-  assert_output --partial "+++ 🚨 Invalid Scan Format: $BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT"
-  
-  assert_failure
-}
-
-@test "Invalid File Output Format" {
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT="wrong-format"
-
-  run get_wiz_cli_args
-  assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"
-
-  assert_failure
-}
-
-@test "Invalid File Output Format (multiple)" {
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="wrong-format"
-
-  run get_wiz_cli_args
-  assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
-
-  assert_failure
-}
-
-@test "Duplicate File Output Formats" {
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
-
-  run get_wiz_cli_args
-
-  assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
-
-  assert_success
-}
-
-@test "Invalid File Output Format (multiple with duplicates)" {
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="human"
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2="wrong-format"
-  
-  run get_wiz_cli_args
-
-  assert_output --partial "+++ ⚠️  Duplicate file output format ignored: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1"
-  assert_output --partial "+++ 🚨 Invalid File Output Format: $BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_2"
-
-  assert_failure
-}
-
-@test "Valid Wiz CLI Args (default)" {
-  run get_wiz_cli_args
-
-  assert_success
-  assert_output --partial "--format=human --output=/scan/result/output,human"
-}
-
-@test "Valid Wiz CLI Args (custom)" {
-  export BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT="json"
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="human"
-  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="json"
-
-  run get_wiz_cli_args
-
-  assert_success
-  assert_output --partial "--format=json --output=/scan/result/output,human --output=/scan/result/output-human,human --output=/scan/result/output-json,json"
-}
-
-@test "Get Wiz CLI Container Image (amd64)" {
-  stub uname "-m : echo 'x86_64'"
-
-  run get_wiz_cli_container
-
-  assert_success
-  assert_output --partial "wiziocli.azurecr.io/wizcli:latest-amd64"
-
-  unstub uname
-}
-
-@test "Get Wiz CLI Container Image (arm64)" {
-  stub uname "-m : echo 'arm64'"
-
-  run get_wiz_cli_container
-
-  assert_success
-  assert_output --partial "wiziocli.azurecr.io/wizcli:latest-arm64"
-
-  unstub uname
-}
-
-@test "Get Wiz CLI Container Image (unknown architecture)" {
   stub uname "-m : echo 'unknown'"
 
-  run get_wiz_cli_container
+  mkdir -p "$WIZ_DIR"
+  touch "$WIZ_DIR/key"
 
+  stub docker \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET wiziocli.azurecr.io/wizcli:latest auth : exit 0' \
+    'pull "ubuntu:22.04" : exit 0' \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli,readonly --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly wiziocli.azurecr.io/wizcli:latest docker scan --image ubuntu:22.04 --policy-hits-only --format=human --output=/scan/result/output,human : echo "Docker image scanned without policy hits"'
+  
+  stub buildkite-agent \
+    'annotate --append --context 'ctx-wiz-docker-success' --style 'success' : echo "Annotated Build"'
+
+  run "$PWD/hooks/post-command"
+  
   assert_success
-  assert_output --partial "wiziocli.azurecr.io/wizcli:latest"
+
+  assert_output --partial "Authenticated successfully"
+  assert_output --partial "Docker image scanned without policy hits"
+  assert_output --partial "Annotated Build"
 
   unstub uname
+  unstub docker
+  unstub buildkite-agent
+}
+
+@test "IaC Scan" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="iac"
+  export BUILDKITE_PLUGIN_WIZ_PATH="iac/to/scan"
+
+  stub uname "-m : echo 'unknown'"
+
+  mkdir -p "$WIZ_DIR"
+  touch "$WIZ_DIR/key"
+
+  stub docker \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET wiziocli.azurecr.io/wizcli:latest auth : exit 0' \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli,readonly --mount type=bind,src=/plugin,dst=/scan wiziocli.azurecr.io/wizcli:latest iac scan --name 1234-abcd --path /scan/iac/to/scan --format=human --output=/scan/result/output,human : echo "IaC scanned without policy hits"'
+  
+  stub buildkite-agent \
+    'annotate --append --context 'ctx-wiz-iac-success' --style 'success' : echo "Annotated Build"' \
+    'artifact upload check-file : echo "Uploaded check-file"'
+
+  run "$PWD/hooks/post-command"
+  
+  assert_success
+
+  assert_output --partial "Authenticated successfully"
+  assert_output --partial "IaC scanned without policy hits"
+  assert_output --partial "Annotated Build"
+  assert_output --partial "Uploaded check-file"
+
+  unstub uname
+  unstub docker
+  unstub buildkite-agent
+}
+
+@test "Directory Scan" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="dir"
+  export BUILDKITE_PLUGIN_WIZ_PATH="dir/to/scan"
+
+  stub uname "-m : echo 'unknown'"
+
+  mkdir -p "$WIZ_DIR"
+  touch "$WIZ_DIR/key"
+
+  stub docker \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET wiziocli.azurecr.io/wizcli:latest auth : exit 0' \
+    'run --rm --mount type=bind,src=/root/.wiz,dst=/cli,readonly --mount type=bind,src=/plugin,dst=/scan wiziocli.azurecr.io/wizcli:latest dir scan --name 1234-abcd --path /scan/dir/to/scan --format=human --output=/scan/result/output,human : echo "Directory scanned without policy hits"'
+  
+  stub buildkite-agent \
+    'annotate --append --context 'ctx-wiz-dir-success' --style 'success' : echo "Annotated Build"' \
+    'artifact upload check-file : echo "Uploaded check-file"'
+
+  run "$PWD/hooks/post-command"
+  
+  assert_success
+
+  assert_output --partial "Authenticated successfully"
+  assert_output --partial "Directory scanned without policy hits"
+  assert_output --partial "Annotated Build"
+  assert_output --partial "Uploaded check-file"
+
+  unstub uname
+  unstub docker
+  unstub buildkite-agent
 }

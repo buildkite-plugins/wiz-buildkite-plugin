@@ -1,22 +1,24 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 # Used to generate the Wiz CLI arguments, including using the scan type for specific arguments
 # $1 - Scan Type
-function get_wiz_cli_args() {
+function build_wiz_cli_args() {
     local scan_type="${1}"
 
     PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
     IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
     SCAN_FORMAT="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:=human}"
     SHOW_SECRET_SNIPPETS="${BUILDKITE_PLUGIN_WIZ_SHOW_SECRET_SNIPPETS:=false}"
-    args=()
+    local -a args=()
 
     # Global Parameters
     if [[ "${SHOW_SECRET_SNIPPETS}" == "true" ]]; then
         args+=("--show-secret-snippets")
     fi
 
-    scan_formats=("human" "json" "sarif")
+    local scan_formats=("human" "json" "sarif")
     if [[ ${scan_formats[*]} =~ ${SCAN_FORMAT} ]]; then
         args+=("--format=${SCAN_FORMAT}")
     else
@@ -26,7 +28,7 @@ function get_wiz_cli_args() {
     fi
 
     # Define valid formats
-    valid_file_formats=("human" "json" "sarif" "csv-zip")
+    local valid_file_formats=("human" "json" "sarif" "csv-zip")
 
     # Default file output which is used for build annotation
     args+=("--output=/scan/result/output,human")
@@ -79,7 +81,7 @@ function get_wiz_cli_args() {
 # Determine the machine architecture to select the appropriate container image tag.
 # Available images: `latest`, `latest-amd64`, and `latest-arm64`.
 # For x86_64 and arm64/aarch64, use the corresponding tag; for unknown architectures, fallback to the default `latest` tag.
-function get_wiz_cli_container() {
+function detect_wiz_cli_container() {
     local architecture
     architecture=$(uname -m)
     local container_image_tag="latest"
@@ -94,16 +96,16 @@ function get_wiz_cli_container() {
     *) ;;
     esac
 
-    wiz_cli_container_repository="wiziocli.azurecr.io/wizcli"
+    local wiz_cli_container_repository="wiziocli.azurecr.io/wizcli"
     echo "${wiz_cli_container_repository}:${container_image_tag}"
 }
 
-function validateWizClientCredentials() {
+function validate_wiz_client_credentials() {
     local missing_vars=()
-    
-    [ -z "${WIZ_CLIENT_ID}" ] && missing_vars+=("WIZ_CLIENT_ID")
-    [ -z "${WIZ_CLIENT_SECRET}" ] && missing_vars+=("WIZ_CLIENT_SECRET")
-    
+
+    [ -z "${WIZ_CLIENT_ID:-}" ] && missing_vars+=("WIZ_CLIENT_ID")
+    [ -z "${WIZ_CLIENT_SECRET:-}" ] && missing_vars+=("WIZ_CLIENT_SECRET")
+
     if [ ${#missing_vars[@]} -gt 0 ]; then
         echo "+++ 🚨 The following required environment variables are not set: ${missing_vars[*]}"
         exit 1
@@ -113,16 +115,26 @@ function validateWizClientCredentials() {
 # Use WIZ_CLIENT_ID and WIZ_CLIENT_SECRET environment variables to authenticate to Wiz and get auth file
 # $1 - Wiz CLI Container Image 
 # $2 - Directory to store auth file
-function setupWiz() {
-    local wiz_container_image="${1}"
-    local wiz_dir="${2}"
+function get_wiz_auth_file() {
+    local wiz_container_image="${1:-}"
+    local wiz_dir="${2:-}"
+
+    if [ -z "${wiz_container_image}" ]; then
+        echo "+++ 🚨 Wiz CLI container image not specified"
+        exit 1
+    fi
+        
+    if [ -z "${wiz_dir}" ]; then
+        echo "+++ 🚨 Wiz directory not specified"
+        return 1
+    fi
 
     echo "Setting up and authenticating wiz"
-    validateWizClientCredentials
+    validate_wiz_client_credentials
     mkdir -p "$wiz_dir"
 
     docker run \
-        --rm -it \
+        --rm \
         --mount type=bind,src="${wiz_dir}",dst=/cli \
         -e WIZ_CLIENT_ID \
         -e WIZ_CLIENT_SECRET \
@@ -131,7 +143,7 @@ function setupWiz() {
 
     # check that wiz-auth work expected, and a file in WIZ_DIR is created
     if [ -z "$(ls -A "${wiz_dir}")" ]; then
-        echo "Wiz authentication failed, please confirm the credentials are set for WIZ_CLIENT_ID and WIZ_CLIENT_SECRET"
+        echo "+++ 🚨 Wiz authentication failed, please confirm the credentials are set for WIZ_CLIENT_ID and WIZ_CLIENT_SECRET"
         exit 1
     else
         echo "Authenticated successfully"
@@ -143,7 +155,7 @@ function setupWiz() {
 # $2 - scan name
 # $3 - scan pass/fail
 # $4 - scan result file
-buildAnnotation() {
+function build_annotation() {
     annotation_file=${RANDOM:0:2}-annotation.md
     docker_or_iac=$(if [ "$1" = "docker" ]; then echo "Wiz Docker Image Scan"; else echo "Wiz IaC Scan"; fi)
     pass_or_fail=$(if [ "$3" = "true" ]; then echo 'meets'; else echo 'does not meet'; fi)
@@ -167,39 +179,38 @@ EOF
 # $2 - Directory with auth file
 # $3 - Image Address
 # $4 - CLI Arguments
-function dockerImageScan() {
-    local wiz_cli_container_image="$1"
-    local wiz_dir="$2"
-    local image="$3"    
-    local -a cli_args=("${@:4}")
+function docker_image_scan() {
+    local wiz_cli_container_image="${1:-}"
+    local wiz_dir="${2:-}"
+    local image="${3:-}"
+    shift 3
+    local -a cli_args=("${@}")
 
     mkdir -p result
 
     # make sure local docker has the image
     docker pull "$image"
 
+    local -i exit_code=0
     docker run \
-        --rm -it \
+        --rm \
         --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly \
         "${wiz_cli_container_image}" \
         docker scan --image "$image" \
         --policy-hits-only \
-        "${cli_args[@]}"
+        "${cli_args[@]}" || exit_code=$?
 
-    exit_code="$?"
-    image_name=$(echo "$image" | cut -d "/" -f 2)
-    # FIXME: Linktree Specific Env. Var.
-    # buildkite-agent artifact upload result --log-level info
-    case $exit_code in
-    0)
-        buildAnnotation "docker" "$image_name" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-docker-success' --style 'success'
-        ;;
-    *)
-        buildAnnotation "docker" "$image_name" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-docker-warning' --style 'warning'
-        ;;
-    esac
+    local image_name
+    image_name="$(echo "$image" | cut -d "/" -f 2)"
+    
+    if [[ $exit_code -eq 0 ]]; then
+        build_annotation "docker" "$image_name" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-docker-success' --style 'success'
+    else
+        build_annotation "docker" "$image_name" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-docker-warning' --style 'warning'
+    fi
+
     exit $exit_code
 }
 
@@ -208,31 +219,32 @@ function dockerImageScan() {
 # $2 - Directory with auth file
 # $3 - File Path
 # $4 - CLI Arguments
-function iacScan() {
-    local wiz_cli_container_image="$1"
-    local wiz_dir="$2"
-    local file_path="$3"
-    local -a cli_args=("${@:4}")
+function iac_scan() {
+    local wiz_cli_container_image="${1:-}"
+    local wiz_dir="${2:-}"
+    local file_path="${3:-}"
+    shift 3
+    local -a cli_args=("${@}")
 
     mkdir -p result
+
+    local -i exit_code=0
     docker run \
-        --rm -it \
+        --rm \
         --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container_image}" \
         iac scan \
         --name "$BUILDKITE_JOB_ID" \
-        --path "/scan/$file_path" "${cli_args[@]}"
+        --path "/scan/$file_path" \
+        "${cli_args[@]}" || exit_code=$?
 
-    exit_code="$?"
-    case $exit_code in
-    0)
-        buildAnnotation "iac" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-success' --style 'success'
-        ;;
-    *)
-        buildAnnotation "iac" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-warning' --style 'warning'
-        ;;
-    esac
+    if [[ $exit_code -eq 0 ]]; then
+        build_annotation "iac" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-success' --style 'success'
+    else
+        build_annotation "iac" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-iac-warning' --style 'warning'    
+    fi
+
     # buildkite-agent artifact upload "result/**/*" --log-level info
     # this post step will be used in template to check the step was run
     echo "${BUILDKITE_BUILD_ID}" >check-file && buildkite-agent artifact upload check-file
@@ -245,34 +257,35 @@ function iacScan() {
 # $2 - Directory with auth file
 # $3 - File Path
 # $4 - CLI Arguments
-function dirScan() {
-    local wiz_cli_container_image="$1"
-    local wiz_dir="$2"
-    local file_path="$3"
-    local -a cli_args=("${@:4}")
+function dir_scan() {
+    local wiz_cli_container_image="${1:-}"
+    local wiz_dir="${2:-}"
+    local file_path="${3:-}"
+    shift 3
+    local -a cli_args=("${@}")
 
     mkdir -p result
+
+    local -i exit_code=0
     docker run \
-        --rm -it \
+        --rm \
         --mount type=bind,src="$wiz_dir",dst=/cli,readonly \
         --mount type=bind,src="$PWD",dst=/scan \
         "${wiz_cli_container_image}" \
         dir scan \
         --name "$BUILDKITE_JOB_ID" \
-        --path "/scan/$file_path" "${cli_args[@]}"
-
-    exit_code="$?"
-    case $exit_code in
-    0)
-        buildAnnotation "dir" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-success' --style 'success'
-        ;;
-    *)
-        buildAnnotation "dir" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-warning' --style 'warning'
-        ;;
-    esac
+        --path "/scan/$file_path" \
+        "${cli_args[@]}" || exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
+        build_annotation "dir" "$BUILDKITE_LABEL" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-success' --style 'success'
+    else
+        build_annotation "dir" "$BUILDKITE_LABEL" false "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-dir-warning' --style 'warning'
+    fi
+    
     # buildkite-agent artifact upload "result/**/*" --log-level info
     # this post step will be used in template to check the step was run
     echo "${BUILDKITE_BUILD_ID}" >check-file && buildkite-agent artifact upload check-file
 
     exit $exit_code
-} 
+}
