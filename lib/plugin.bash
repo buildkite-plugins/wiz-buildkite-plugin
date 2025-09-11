@@ -126,7 +126,7 @@ function get_wiz_auth_file() {
         
     if [ -z "${wiz_dir}" ]; then
         echo "+++ 🚨 Wiz directory not specified" >&2
-        return 1
+        exit 1
     fi
 
     echo "Setting up and authenticating wiz"
