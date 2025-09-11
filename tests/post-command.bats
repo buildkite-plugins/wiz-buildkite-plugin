@@ -146,3 +146,42 @@ teardown() {
   unstub docker
   unstub buildkite-agent
 }
+
+@test "Directory Scan with Invalid Scan Format" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="dir"
+  export BUILDKITE_PLUGIN_WIZ_PATH="dir/to/scan"
+  export BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT="invalid"
+
+  run "$PWD/hooks/post-command"
+  
+  assert_failure
+
+  assert_output --partial "+++ 🚨 Invalid Scan Format: invalid"
+  assert_output --partial "Valid Formats: human json sarif"
+}
+
+@test "Directory Scan with Invalid Output Format" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="dir"
+  export BUILDKITE_PLUGIN_WIZ_PATH="dir/to/scan"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT="invalid"
+
+  run "$PWD/hooks/post-command"
+  
+  assert_failure
+
+  assert_output --partial "+++ 🚨 Invalid File Output Format: invalid"
+  assert_output --partial "Valid Formats: human json sarif csv-zip"
+}
+
+@test "Directory Scan with unset Wiz Credentials" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="dir"
+  export BUILDKITE_PLUGIN_WIZ_PATH="dir/to/scan"
+  unset WIZ_CLIENT_ID
+  unset WIZ_CLIENT_SECRET
+
+  run "$PWD/hooks/post-command"
+  
+  assert_failure
+
+  assert_output --partial "+++ 🚨 The following required environment variables are not set: WIZ_CLIENT_ID WIZ_CLIENT_SECRET"
+}

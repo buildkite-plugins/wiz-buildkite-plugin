@@ -22,8 +22,8 @@ function build_wiz_cli_args() {
     if [[ ${scan_formats[*]} =~ ${SCAN_FORMAT} ]]; then
         args+=("--format=${SCAN_FORMAT}")
     else
-        echo "+++ 🚨 Invalid Scan Format: ${SCAN_FORMAT}"
-        echo "Valid Formats: ${scan_formats[*]}"
+        echo "+++ 🚨 Invalid Scan Format: ${SCAN_FORMAT}" >&2
+        echo "Valid Formats: ${scan_formats[*]}" >&2
         exit 1
     fi
 
@@ -56,8 +56,8 @@ function build_wiz_cli_args() {
             if in_array "$format" "${valid_file_formats[@]}"; then
                 args+=("--output=/scan/result/output-${format},${format}")
             else
-                echo "+++ 🚨 Invalid File Output Format: ${format}"
-                echo "Valid Formats: ${valid_file_formats[*]}"
+                echo "+++ 🚨 Invalid File Output Format: ${format}" >&2
+                echo "Valid Formats: ${valid_file_formats[*]}" >&2
                 exit 1
             fi
         done
@@ -107,7 +107,7 @@ function validate_wiz_client_credentials() {
     [ -z "${WIZ_CLIENT_SECRET:-}" ] && missing_vars+=("WIZ_CLIENT_SECRET")
 
     if [ ${#missing_vars[@]} -gt 0 ]; then
-        echo "+++ 🚨 The following required environment variables are not set: ${missing_vars[*]}"
+        echo "+++ 🚨 The following required environment variables are not set: ${missing_vars[*]}" >&2
         exit 1
     fi
 }
@@ -120,13 +120,13 @@ function get_wiz_auth_file() {
     local wiz_dir="${2:-}"
 
     if [ -z "${wiz_container_image}" ]; then
-        echo "+++ 🚨 Wiz CLI container image not specified"
+        echo "+++ 🚨 Wiz CLI container image not specified" >&2
         exit 1
     fi
         
     if [ -z "${wiz_dir}" ]; then
-        echo "+++ 🚨 Wiz directory not specified"
-        return 1
+        echo "+++ 🚨 Wiz directory not specified" >&2
+        exit 1
     fi
 
     echo "Setting up and authenticating wiz"
@@ -143,7 +143,7 @@ function get_wiz_auth_file() {
 
     # check that wiz-auth work expected, and a file in WIZ_DIR is created
     if [ -z "$(ls -A "${wiz_dir}")" ]; then
-        echo "+++ 🚨 Wiz authentication failed, please confirm the credentials are set for WIZ_CLIENT_ID and WIZ_CLIENT_SECRET"
+        echo "+++ 🚨 Wiz authentication failed, please confirm the credentials are set for WIZ_CLIENT_ID and WIZ_CLIENT_SECRET" >&2
         exit 1
     else
         echo "Authenticated successfully"
