@@ -11,7 +11,7 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 . "$DIR/../lib/shared.bash"
 
 SCAN_TYPE="${BUILDKITE_PLUGIN_WIZ_SCAN_TYPE:-}"
-FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-}"
+FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-.}"
 
 if [[ -z "${SCAN_TYPE}" ]]; then
     echo "+++ 🚨 Missing scan type. Possible values: 'iac', 'docker', 'dir'"

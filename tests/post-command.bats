@@ -118,6 +118,26 @@ teardown() {
   unstub buildkite-agent
 }
 
+@test "Directory Scan defaults path to current directory" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="dir"
+
+  stub docker \
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan public-registry.wiz.io/wiz-app/wizcli:1 scan dir /scan/. --name 1234-abcd --stdout=human --human-output-file=/scan/result/output : echo "Directory scanned without policy hits"'
+
+  stub buildkite-agent \
+    'annotate --append --context 'ctx-wiz-dir-success' --style 'success' : echo "Annotated Build"' \
+    'artifact upload check-file : echo "Uploaded check-file"'
+
+  run "$PWD/hooks/post-command"
+
+  assert_success
+
+  assert_output --partial "Directory scanned without policy hits"
+
+  unstub docker
+  unstub buildkite-agent
+}
+
 @test "Directory Scan with Invalid Scan Format" {
   export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="dir"
   export BUILDKITE_PLUGIN_WIZ_PATH="dir/to/scan"
