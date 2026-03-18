@@ -148,7 +148,7 @@ function docker_image_scan() {
         "${cli_args[@]}" || exit_code=$?
 
     local image_name
-    image_name="$(echo "$image" | cut -d "/" -f 2)"
+    image_name="${image##*/}"
 
     if [[ $exit_code -eq 0 ]]; then
         build_annotation "docker" "$image_name" true "result/output" | buildkite-agent annotate --append --context 'ctx-wiz-docker-success' --style 'success'
