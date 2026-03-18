@@ -10,7 +10,6 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 # shellcheck source=lib/shared.bash
 . "$DIR/../lib/shared.bash"
 
-WIZ_DIR="$HOME/.wiz"
 SCAN_TYPE="${BUILDKITE_PLUGIN_WIZ_SCAN_TYPE:-}"
 FILE_PATH="${BUILDKITE_PLUGIN_WIZ_PATH:-}"
 
@@ -24,20 +23,21 @@ if [[ "${SCAN_TYPE}" == "docker" && -z "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS:-}"
     exit 1
 fi
 
+validate_wiz_client_credentials
+
 declare -a cli_args
 # shellcheck disable=SC2207
 cli_args=($(build_wiz_cli_args "${SCAN_TYPE}"))
 wiz_cli_container_image=$(detect_wiz_cli_container)
-get_wiz_auth_file "$wiz_cli_container_image" "$WIZ_DIR"
 
 case "${SCAN_TYPE}" in
 iac)
-    iac_scan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
+    iac_scan "$wiz_cli_container_image" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 docker)
-    docker_image_scan "$wiz_cli_container_image" "$WIZ_DIR" "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS}" "${cli_args[@]}"
+    docker_image_scan "$wiz_cli_container_image" "${BUILDKITE_PLUGIN_WIZ_IMAGE_ADDRESS}" "${cli_args[@]}"
     ;;
 dir)
-    dir_scan "$wiz_cli_container_image" "$WIZ_DIR" "${FILE_PATH}" "${cli_args[@]}"
+    dir_scan "$wiz_cli_container_image" "${FILE_PATH}" "${cli_args[@]}"
     ;;
 esac

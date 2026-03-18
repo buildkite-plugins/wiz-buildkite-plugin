@@ -32,7 +32,7 @@ configuration:
         - dir
         - docker
         - iac
-    show-secret-snippets:
+    sensitive-data:
       type: boolean
       default: false
     iac-type:
@@ -40,10 +40,13 @@ configuration:
       enum:
         - Ansible
         - AzureResourceManager
+        - Bicep
         - Cloudformation
         - Dockerfile
+        - GitHubActions
         - GoogleCloudDeploymentManager
         - Kubernetes
+        - Pulumi
         - Terraform
   required:
     - scan-type
