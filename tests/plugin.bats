@@ -148,6 +148,16 @@ teardown() {
   assert_output --partial "--types=Terraform"
 }
 
+@test "IaC type with iac scan type" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="iac"
+  export BUILDKITE_PLUGIN_WIZ_IAC_TYPE="Cloudformation"
+
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+
+  assert_success
+  assert_output --partial "--types=Cloudformation"
+}
+
 @test "Sarif and csv-zip file output formats" {
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="sarif"
   export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="csv-zip"
@@ -167,6 +177,16 @@ teardown() {
 
   assert_success
   assert_output --partial "--parameter-files=variables.tf"
+}
+
+@test "Parameter files with iac scan type" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="iac"
+  export BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES="params.json"
+
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+
+  assert_success
+  assert_output --partial "--parameter-files=params.json"
 }
 
 @test "Get Wiz CLI Container Image" {
