@@ -122,6 +122,53 @@ teardown() {
   assert_output --partial "--stdout=json --human-output-file=/scan/result/output --human-output-file=/scan/result/output-human --json-output-file=/scan/result/output-json"
 }
 
+@test "Disable sensitive data scan adds --disabled-scanners" {
+  export BUILDKITE_PLUGIN_WIZ_DISABLE_SENSITIVE_DATA_SCAN="true"
+
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+
+  assert_success
+  assert_output --partial "--disabled-scanners=SensitiveData"
+}
+
+@test "Sensitive data scan enabled by default (no --disabled-scanners)" {
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+
+  assert_success
+  refute_output --partial "--disabled-scanners"
+}
+
+@test "IaC type with dir scan type" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="dir"
+  export BUILDKITE_PLUGIN_WIZ_IAC_TYPE="Terraform"
+
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+
+  assert_success
+  assert_output --partial "--types=Terraform"
+}
+
+@test "Sarif and csv-zip file output formats" {
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_0="sarif"
+  export BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT_1="csv-zip"
+
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+
+  assert_success
+  assert_output --partial "--sarif-output-file=/scan/result/output-sarif"
+  assert_output --partial "--csv-output-file=/scan/result/output-csv-zip"
+}
+
+@test "Parameter files with dir scan type" {
+  export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="dir"
+  export BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES="variables.tf"
+
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+
+  assert_success
+  assert_output --partial "--parameter-files=variables.tf"
+}
+
 @test "Get Wiz CLI Container Image" {
   run detect_wiz_cli_container
 
