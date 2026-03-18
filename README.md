@@ -26,11 +26,15 @@ v3 upgrades the underlying Wiz CLI from v0.x to v1.x. WizCLI v0.x reached End of
 Breaking changes:
 
 - The `show-secret-snippets` option has been removed (not supported by WizCLI v1 scan commands).
-- Authentication is now handled inline by scan commands via `WIZ_CLIENT_ID` and `WIZ_CLIENT_SECRET` environment variables, rather than a separate auth step.
-- Three new `iac-type` values are supported: `Bicep`, `GitHubActions`, and `Pulumi`.
-- A new `disable-sensitive-data-scan` option lets you opt out of the sensitive data scanner (enabled by default in WizCLI v1).
+- Sensitive data scanning (PII, PCI, PHI) is now enabled by default. Use the `disable-sensitive-data-scan` option to opt out.
 
 No changes are required to your pipeline YAML unless you were using `show-secret-snippets`.
+
+New in v3:
+
+- Three new `iac-type` values: `Bicep`, `GitHubActions`, and `Pulumi`.
+- The `iac-type` and `parameter-files` options now apply to `dir` scans in addition to `iac` scans.
+- The WizCLI container image is now pulled from `public-registry.wiz.io/wiz-app/wizcli`. If your agents use firewall or registry allowlists, update them to permit access to this registry.
 
 ## Examples
 
