@@ -97,7 +97,7 @@ function validate_wiz_client_credentials() {
 # $3 - scan pass/fail
 # $4 - scan result file
 function build_annotation() {
-    annotation_file=${RANDOM:0:2}-annotation.md
+    local annotation_file="${RANDOM:0:2}-annotation.md"
     local scan_label
     case "$1" in
         docker) scan_label="Wiz Docker Image Scan" ;;
@@ -105,8 +105,9 @@ function build_annotation() {
         dir)    scan_label="Wiz Directory Scan" ;;
         *)      scan_label="Wiz Scan" ;;
     esac
+    local pass_or_fail
     pass_or_fail=$(if [ "$3" = "true" ]; then echo 'meets'; else echo 'does not meet'; fi)
-    summary="${scan_label} for ${2} ${pass_or_fail} policy requirements"
+    local summary="${scan_label} for ${2} ${pass_or_fail} policy requirements"
     cat <<EOF >>./"${annotation_file}"
 <details>
 <summary>$summary.</summary>
