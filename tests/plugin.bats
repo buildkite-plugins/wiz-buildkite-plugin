@@ -221,7 +221,7 @@ teardown() {
 
   stub docker \
     'pull "ubuntu:latest" : exit 0' \
-    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly public-registry.wiz.io/wiz-app/wizcli:1 scan container-image ubuntu:latest --by-policy-hits=BLOCK --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned without policy hits"'
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly public-registry.wiz.io/wiz-app/wizcli:1 scan container-image ubuntu:latest --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned without policy hits"'
 
   stub buildkite-agent \
     'annotate --append --context 'ctx-wiz-docker-success' --style 'success' : echo "Annotated Build"'
@@ -246,7 +246,7 @@ teardown() {
 
   stub docker \
     'pull "ubuntu:latest" : exit 0' \
-    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly public-registry.wiz.io/wiz-app/wizcli:1 scan container-image ubuntu:latest --by-policy-hits=BLOCK --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned with policy hits"; exit 1'
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly public-registry.wiz.io/wiz-app/wizcli:1 scan container-image ubuntu:latest --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned with policy hits"; exit 1'
 
   stub buildkite-agent \
     'annotate --append --context 'ctx-wiz-docker-warning' --style 'warning' : echo "Annotated Build"'

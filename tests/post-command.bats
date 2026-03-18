@@ -56,7 +56,7 @@ teardown() {
 
   stub docker \
     'pull "ubuntu:22.04" : exit 0' \
-    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly public-registry.wiz.io/wiz-app/wizcli:1 scan container-image ubuntu:22.04 --by-policy-hits=BLOCK --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned without policy hits"'
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly public-registry.wiz.io/wiz-app/wizcli:1 scan container-image ubuntu:22.04 --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned without policy hits"'
 
   stub buildkite-agent \
     'annotate --append --context 'ctx-wiz-docker-success' --style 'success' : echo "Annotated Build"'

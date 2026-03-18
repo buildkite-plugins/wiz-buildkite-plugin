@@ -145,7 +145,6 @@ function docker_image_scan() {
         --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly \
         "${wiz_cli_container_image}" \
         scan container-image "$image" \
-        --by-policy-hits="BLOCK" \
         "${cli_args[@]}" || exit_code=$?
 
     local image_name
