@@ -1,5 +1,5 @@
 name: "Wiz Security Scanner"
-description: Integrates wiz security scanning for infrastructure-as-code and docker images
+description: Integrates Wiz security scanning for infrastructure-as-code, docker images, and directories
 author: https://github.com/blstrco, https://github.com/buildkite-plugins
 public: true
 requirements:
@@ -32,7 +32,7 @@ configuration:
         - dir
         - docker
         - iac
-    show-secret-snippets:
+    disable-sensitive-data-scan:
       type: boolean
       default: false
     iac-type:
@@ -40,10 +40,13 @@ configuration:
       enum:
         - Ansible
         - AzureResourceManager
+        - Bicep
         - Cloudformation
         - Dockerfile
+        - GitHubActions
         - GoogleCloudDeploymentManager
         - Kubernetes
+        - Pulumi
         - Terraform
   required:
     - scan-type

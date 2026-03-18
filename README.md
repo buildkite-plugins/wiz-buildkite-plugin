@@ -19,6 +19,23 @@ And the following environment variables exported in the job (e.g. via an Agent h
 
 Check out [Buildkite's documentation](https://buildkite.com/docs/pipelines/security/secrets/managing) for more information on how to manage secrets in Buildkite.
 
+## Migrating from v2 to v3
+
+v3 upgrades the underlying Wiz CLI from v0.x to v1.x. WizCLI v0.x reached End of Support on April 15, 2026.
+
+Breaking changes:
+
+- The `show-secret-snippets` option has been removed (not supported by WizCLI v1 scan commands).
+- Sensitive data scanning (PII, PCI, PHI) is now enabled by default. Use the `disable-sensitive-data-scan` option to opt out.
+
+No changes are required to your pipeline YAML unless you were using `show-secret-snippets`.
+
+New in v3:
+
+- Three new `iac-type` values: `Bicep`, `GitHubActions`, and `Pulumi`.
+- The `iac-type` and `parameter-files` options now apply to `dir` scans in addition to `iac` scans.
+- The WizCLI container image is now pulled from `public-registry.wiz.io/wiz-app/wizcli`. If your agents use firewall or registry allowlists, update them to permit access to this registry.
+
 ## Examples
 
 ### Docker Scanning
@@ -29,18 +46,9 @@ Add the following to your `pipeline.yml`, the plugin will pull the image, scan i
 steps:
   - command: ls
     plugins:
-      - wiz#v2.0.0:
+      - wiz#v3.0.0:
           scan-type: 'docker'
           image-address: "<image-address-to-pull-and-scan>"
-```
-
-If you are using the [AWS Assume Role Plugin](https://github.com/cultureamp/aws-assume-role-buildkite-plugin), you might have trouble getting your secret key from `aws secretsmanager` if the role you assumed doesn't have the necessary access rights. To restore your role, you can use the [AWS Restore Role Buildkite Plugin](https://github.com/franklin-ross/aws-restore-role-buildkite-plugin) before the wiz plugin.
-
-```yml
-  plugins:
-      - franklin-ross/aws-restore-role#HEAD
-      - wiz#v2.0.0:
-        scan-type: 'docker'
 ```
 
 ### AWS `cdk diff` Scanning
@@ -51,11 +59,11 @@ To avoid adding build time overhead, you can add IaC scanning to your `cdk diff`
 steps:
   - command: ls
     plugins:
-      - docker-compose#v4.16.0:
-        # to get the output of CDK diff, mount the volume in cdk diff stage
-        - volumes:
-          - './infrastructure/cdk.out:/app/infrastructure/cdk.out'
-      - wiz#v2.0.0:
+      - docker-compose#v5.12.1:
+          # Mount cdk.out so it's available for the wiz scan
+          volumes:
+            - './infrastructure/cdk.out:/app/infrastructure/cdk.out'
+      - wiz#v3.0.0:
           scan-type: 'iac'
           path: "infrastructure/cdk.out"
 ```
@@ -69,7 +77,7 @@ steps:
   - label: "Scan CloudFormation template file"
     command: ls
     plugins:
-      - wiz#v2.0.0:
+      - wiz#v3.0.0:
           scan-type: 'iac'
           iac-type: 'Cloudformation'
           path: 'cf-template.yaml'
@@ -87,7 +95,7 @@ steps:
   - label: "Scan Terraform File"
     command: ls *.tf
     plugins:
-      - wiz#v2.0.0:
+      - wiz#v3.0.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
           path: 'main.tf'
@@ -102,7 +110,7 @@ steps:
   - label: "Scan Terraform Files in Directory"
     command: ls my-terraform-dir/*.tf
     plugins:
-      - wiz#v2.0.0:
+      - wiz#v3.0.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
           path: 'my-terraform-dir'
@@ -117,7 +125,7 @@ steps:
   - label: "Scan Terraform Plan"
     command: terraform plan -out plan.tfplan && terraform show -json plan.tfplan | jq -er . > plan.tfplanjson
     plugins:
-      - wiz#v2.0.0:
+      - wiz#v3.0.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
           path: 'plan.tfplanjson'
@@ -132,9 +140,9 @@ steps:
   - label: "Scan Directory"
     command: ls .
     plugins:
-      - wiz#v2.0.0:
+      - wiz#v3.0.0:
           scan-type: 'dir'
-          path: 'main.tf'
+          path: 'src'
 ```
 
 By default, `path` parameter will be the root of your repository, and scan all files in the local directory.
@@ -145,25 +153,26 @@ steps:
   - label: "Scan Files in different Directory"
     command: ls my-dir
     plugins:
-      - wiz#v2.0.0:
+      - wiz#v3.0.0:
           scan-type: 'dir'
           path: 'my-dir'
 ```
 
 ## Configuration
 
-### `scan-type` (Required, string) : `dir | docker | iac'
+### `scan-type` (Required, string): `dir | docker | iac`
 
 The type of resource to be scanned.
 
-### `iac-type` (Optional, string): `Ansible | AzureResourceManager | Cloudformation | Dockerfile | GoogleCloudDeploymentManager | Kubernetes | Terraform`
+### `iac-type` (Optional, string): `Ansible | AzureResourceManager | Bicep | Cloudformation | Dockerfile | GitHubActions | GoogleCloudDeploymentManager | Kubernetes | Pulumi | Terraform`
 
 Narrow down the scan to specific type.
-Used when `scan-type` is `iac`.
+Used when `scan-type` is `iac` or `dir`.
 
 ### `image-address` (Optional, string)
 
-The path to image file, if the `scan-type` is `docker`.
+The container registry address of the image to scan (e.g., `myregistry.io/image:tag`).
+Used when `scan-type` is `docker`.
 
 ### `scan-format` (Optional, string): `human | json | sarif`
 
@@ -177,16 +186,17 @@ Generates an additional output file with the specified format.
 ### `parameter-files` (Optional, string)
 
 Comma separated list of globs of external parameter files to include while scanning e.g., `variables.tf`
-Used when `scan-type` is `iac`.
+Used when `scan-type` is `iac` or `dir`.
 
 ### `path` (Optional, string)
 
-The file or directory to scan, defaults to the root directory of repository.
+The file or directory to scan.
 Used when `scan-type` is `dir` or `iac`.
+Defaults to: repository root (`.`)
 
-### `show-secret-snippets` (Optional, bool)
+### `disable-sensitive-data-scan` (Optional, bool)
 
-Enable snippets in secrets.
+Disable the sensitive data scanner (PII, PCI, PHI detection). WizCLI v1 enables this scanner by default.
 Defaults to: `false`
 
 ## Developing

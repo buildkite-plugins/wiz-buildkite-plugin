@@ -1,3 +1,6 @@
+# Wiz CLI binary (local development artifact)
+wizcli
+
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
