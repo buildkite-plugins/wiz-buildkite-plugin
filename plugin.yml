@@ -32,7 +32,7 @@ configuration:
         - dir
         - docker
         - iac
-    sensitive-data:
+    disable-sensitive-data-scan:
       type: boolean
       default: false
     iac-type:

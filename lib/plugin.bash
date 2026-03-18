@@ -10,11 +10,11 @@ function build_wiz_cli_args() {
     PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
     IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
     SCAN_FORMAT="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:=human}"
-    SENSITIVE_DATA="${BUILDKITE_PLUGIN_WIZ_SENSITIVE_DATA:=false}"
+    DISABLE_SENSITIVE_DATA_SCAN="${BUILDKITE_PLUGIN_WIZ_DISABLE_SENSITIVE_DATA_SCAN:=false}"
     local -a args=()
 
-    if [[ "${scan_type}" == "docker" && "${SENSITIVE_DATA}" == "true" ]]; then
-        args+=("--sensitive-data")
+    if [[ "${DISABLE_SENSITIVE_DATA_SCAN}" == "true" ]]; then
+        args+=("--disabled-scanners=SensitiveData")
     fi
 
     local scan_formats=("human" "json" "sarif")

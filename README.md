@@ -28,7 +28,7 @@ Breaking changes:
 - The `show-secret-snippets` option has been removed (not supported by WizCLI v1 scan commands).
 - Authentication is now handled inline by scan commands via `WIZ_CLIENT_ID` and `WIZ_CLIENT_SECRET` environment variables, rather than a separate auth step.
 - Three new `iac-type` values are supported: `Bicep`, `GitHubActions`, and `Pulumi`.
-- A new `sensitive-data` option enables sensitive data detection for Docker image scans.
+- A new `disable-sensitive-data-scan` option lets you opt out of the sensitive data scanner (enabled by default in WizCLI v1).
 
 No changes are required to your pipeline YAML unless you were using `show-secret-snippets`.
 
@@ -190,9 +190,9 @@ The file or directory to scan.
 Used when `scan-type` is `dir` or `iac`.
 Defaults to: repository root (`.`)
 
-### `sensitive-data` (Optional, bool)
+### `disable-sensitive-data-scan` (Optional, bool)
 
-Enable sensitive data detection (PII, PCI, PHI) for Docker image scans.
+Disable the sensitive data scanner (PII, PCI, PHI detection). WizCLI v1 enables this scanner by default.
 Defaults to: `false`
 
 ## Developing
