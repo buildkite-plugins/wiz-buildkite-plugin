@@ -56,6 +56,7 @@ steps:
   - command: ls
     plugins:
       - docker-compose#v5.12.1:
+          # Mount cdk.out so it's available for the wiz scan
           volumes:
             - './infrastructure/cdk.out:/app/infrastructure/cdk.out'
       - wiz#v3.0.0:
@@ -166,7 +167,8 @@ Used when `scan-type` is `iac` or `dir`.
 
 ### `image-address` (Optional, string)
 
-The container registry address of the image to scan (e.g., `myregistry.io/image:tag`). Required when `scan-type` is `docker`.
+The container registry address of the image to scan (e.g., `myregistry.io/image:tag`).
+Used when `scan-type` is `docker`.
 
 ### `scan-format` (Optional, string): `human | json | sarif`
 
