@@ -7,21 +7,21 @@ set -euo pipefail
 function build_wiz_cli_args() {
     local scan_type="${1}"
 
-    PARAMETER_FILES="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
-    IAC_TYPE="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
-    SCAN_FORMAT="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:=human}"
-    DISABLE_SENSITIVE_DATA_SCAN="${BUILDKITE_PLUGIN_WIZ_DISABLE_SENSITIVE_DATA_SCAN:=false}"
+    local parameter_files="${BUILDKITE_PLUGIN_WIZ_PARAMETER_FILES:-}"
+    local iac_type="${BUILDKITE_PLUGIN_WIZ_IAC_TYPE:-}"
+    local scan_format="${BUILDKITE_PLUGIN_WIZ_SCAN_FORMAT:-human}"
+    local disable_sensitive_data_scan="${BUILDKITE_PLUGIN_WIZ_DISABLE_SENSITIVE_DATA_SCAN:-false}"
     local -a args=()
 
-    if [[ "${DISABLE_SENSITIVE_DATA_SCAN}" == "true" ]]; then
+    if [[ "${disable_sensitive_data_scan}" == "true" ]]; then
         args+=("--disabled-scanners=SensitiveData")
     fi
 
     local scan_formats=("human" "json" "sarif")
-    if [[ ${scan_formats[*]} =~ ${SCAN_FORMAT} ]]; then
-        args+=("--stdout=${SCAN_FORMAT}")
+    if [[ ${scan_formats[*]} =~ ${scan_format} ]]; then
+        args+=("--stdout=${scan_format}")
     else
-        echo "+++ 🚨 Invalid Scan Format: ${SCAN_FORMAT}" >&2
+        echo "+++ 🚨 Invalid Scan Format: ${scan_format}" >&2
         echo "Valid Formats: ${scan_formats[*]}" >&2
         exit 1
     fi
@@ -61,12 +61,12 @@ function build_wiz_cli_args() {
 
     # IaC-specific parameters apply to both iac and dir scan types
     if [[ "${scan_type}" == "iac" || "${scan_type}" == "dir" ]]; then
-        if [[ -n "${IAC_TYPE}" ]]; then
-            args+=("--types=${IAC_TYPE}")
+        if [[ -n "${iac_type}" ]]; then
+            args+=("--types=${iac_type}")
         fi
 
-        if [[ -n "${PARAMETER_FILES}" ]]; then
-            args+=("--parameter-files=${PARAMETER_FILES}")
+        if [[ -n "${parameter_files}" ]]; then
+            args+=("--parameter-files=${parameter_files}")
         fi
     fi
 
