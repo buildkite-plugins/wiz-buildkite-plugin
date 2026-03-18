@@ -18,7 +18,7 @@ function build_wiz_cli_args() {
     fi
 
     local scan_formats=("human" "json" "sarif")
-    if [[ ${scan_formats[*]} =~ ${scan_format} ]]; then
+    if in_array "$scan_format" "${scan_formats[@]}"; then
         args+=("--stdout=${scan_format}")
     else
         echo "+++ 🚨 Invalid Scan Format: ${scan_format}" >&2
@@ -32,12 +32,10 @@ function build_wiz_cli_args() {
     # Default file output used for build annotation
     args+=("--human-output-file=/scan/result/output")
 
-    # Declare result array
-    declare -a result
+    local -a result=()
 
-    # Read file output formats into result array
     if plugin_read_list_into_result "BUILDKITE_PLUGIN_WIZ_FILE_OUTPUT_FORMAT"; then
-        declare -A seen_formats
+        local -A seen_formats=()
         for format in "${result[@]}"; do
             if [[ -n "${seen_formats[$format]:-}" ]]; then
                 echo "+++ ⚠️  Duplicate file output format ignored: ${format}"
