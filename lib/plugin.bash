@@ -17,6 +17,13 @@ function build_wiz_cli_args() {
         args+=("--disabled-scanners=SensitiveData")
     fi
 
+    # Tags can be set for all scan types
+    if plugin_read_list_into_result "BUILDKITE_PLUGIN_WIZ_TAGS"; then
+        if [ ${#result[@]} -gt 0 ]; then
+            args+=("--tags=$(IFS=,; echo "${result[*]}")")
+        fi
+    fi
+
     local scan_formats=("human" "json" "sarif")
     if in_array "$scan_format" "${scan_formats[@]}"; then
         args+=("--stdout=${scan_format}")

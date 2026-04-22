@@ -138,6 +138,26 @@ teardown() {
   refute_output --partial "--disabled-scanners"
 }
 
+@test "Add tags to the scan from a comma separated string" {
+  export BUILDKITE_PLUGIN_WIZ_TAGS="tag1=test1,tag2=test2,tag3"
+
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+
+  assert_success
+  assert_output --partial "--tags=tag1=test1,tag2=test2,tag3"
+}
+
+@test "Add tags to the scan from an array" {
+  export BUILDKITE_PLUGIN_WIZ_TAGS_0="tag1=test1"
+  export BUILDKITE_PLUGIN_WIZ_TAGS_1="tag2=test2"
+  export BUILDKITE_PLUGIN_WIZ_TAGS_2="tag3"
+
+  run build_wiz_cli_args "$BUILDKITE_PLUGIN_WIZ_SCAN_TYPE"
+
+  assert_success
+  assert_output --partial "--tags=tag1=test1,tag2=test2,tag3"
+}
+
 @test "IaC type with dir scan type" {
   export BUILDKITE_PLUGIN_WIZ_SCAN_TYPE="dir"
   export BUILDKITE_PLUGIN_WIZ_IAC_TYPE="Terraform"

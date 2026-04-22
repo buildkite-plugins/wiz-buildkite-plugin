@@ -35,6 +35,8 @@ configuration:
     disable-sensitive-data-scan:
       type: boolean
       default: false
+    tags:
+      type: [string, array]
     iac-type:
       type: string
       enum:
