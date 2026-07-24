@@ -199,6 +199,10 @@ Defaults to: repository root (`.`)
 Disable the sensitive data scanner (PII, PCI, PHI detection). WizCLI v1 enables this scanner by default.
 Defaults to: `false`
 
+### `tags` (Optional, string or array)
+
+List of tags to mark the scan with. The format of a tag can be KEY or KEY=VALUE.
+
 ## Developing
 
 To run the tests:
