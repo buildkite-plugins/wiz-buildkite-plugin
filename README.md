@@ -60,7 +60,7 @@ Add the following to your `pipeline.yml`, the plugin will pull the image, scan i
 steps:
   - command: ls
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'docker'
           image-address: "<image-address-to-pull-and-scan>"
 ```
@@ -77,7 +77,7 @@ steps:
           # Mount cdk.out so it's available for the wiz scan
           volumes:
             - './infrastructure/cdk.out:/app/infrastructure/cdk.out'
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           path: "infrastructure/cdk.out"
 ```
@@ -91,7 +91,7 @@ steps:
   - label: "Scan CloudFormation template file"
     command: ls
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           iac-type: 'Cloudformation'
           path: 'cf-template.yaml'
@@ -109,7 +109,7 @@ steps:
   - label: "Scan Terraform File"
     command: ls *.tf
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
           path: 'main.tf'
@@ -124,7 +124,7 @@ steps:
   - label: "Scan Terraform Files in Directory"
     command: ls my-terraform-dir/*.tf
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
           path: 'my-terraform-dir'
@@ -139,7 +139,7 @@ steps:
   - label: "Scan Terraform Plan"
     command: terraform plan -out plan.tfplan && terraform show -json plan.tfplan | jq -er . > plan.tfplanjson
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
           path: 'plan.tfplanjson'
@@ -154,7 +154,7 @@ steps:
   - label: "Scan Directory"
     command: ls .
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'dir'
           path: 'src'
 ```
@@ -167,7 +167,7 @@ steps:
   - label: "Scan Files in different Directory"
     command: ls my-dir
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'dir'
           path: 'my-dir'
 ```
