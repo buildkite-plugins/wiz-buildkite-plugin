@@ -19,6 +19,20 @@ And the following environment variables exported in the job (e.g. via an Agent h
 
 Check out [Buildkite's documentation](https://buildkite.com/docs/pipelines/security/secrets/managing) for more information on how to manage secrets in Buildkite.
 
+## Scanner image updates
+
+Before each scan, the plugin tries to pull the selected Wiz CLI image. Docker
+reuses cached layers when they have not changed. If the pull fails, the plugin
+warns and uses the selected image from the local cache if it is available;
+otherwise, the scan stops. A failed refresh can therefore leave an agent using
+an older scanner. The plugin runs the resolved local image ID so another job
+changing the image tag does not change the scanner selected for that scan.
+
+The default image is `public-registry.wiz.io/wiz-app/wizcli:1`, which follows
+Wiz's v1 releases. Set `cli-image` to a version tag to stay on a particular
+release, or to a digest for an immutable pin. Version tags can be changed by the
+vendor. The plugin does not enforce a minimum scanner version.
+
 ## Migrating from v2 to v3
 
 v3 upgrades the underlying Wiz CLI from v0.x to v1.x. WizCLI v0.x reached End of Support on April 15, 2026.
@@ -168,6 +182,16 @@ The type of resource to be scanned.
 
 Narrow down the scan to specific type.
 Used when `scan-type` is `iac` or `dir`.
+
+### `cli-image` (Optional, string)
+
+The Wiz CLI container image to run. Defaults to
+`public-registry.wiz.io/wiz-app/wizcli:1`.
+
+For example, set `cli-image: public-registry.wiz.io/wiz-app/wizcli:1.81.0` to
+select that release. An image reference with `@sha256:<digest>` pins an exact
+artifact. Custom images must support the Wiz CLI v1 commands used by the plugin.
+This setting selects the scanner, not the container image being scanned.
 
 ### `image-address` (Optional, string)
 

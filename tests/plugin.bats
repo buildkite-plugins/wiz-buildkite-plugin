@@ -260,8 +260,10 @@ teardown() {
   touch "result/output"
 
   stub docker \
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo refreshed' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : echo sha256:scanner" \
     'pull "ubuntu:latest" : exit 0' \
-    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly public-registry.wiz.io/wiz-app/wizcli:1 scan container-image ubuntu:latest --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned without policy hits"'
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly sha256:scanner scan container-image ubuntu:latest --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned without policy hits"'
 
   stub buildkite-agent \
     'annotate --append --context 'ctx-wiz-docker-success' --style 'success' : echo "Annotated Build"'
@@ -285,8 +287,10 @@ teardown() {
   touch "result/output"
 
   stub docker \
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo refreshed' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : echo sha256:scanner" \
     'pull "ubuntu:latest" : exit 0' \
-    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly public-registry.wiz.io/wiz-app/wizcli:1 scan container-image ubuntu:latest --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned with policy hits"; exit 1'
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock,readonly sha256:scanner scan container-image ubuntu:latest --stdout=human --human-output-file=/scan/result/output : echo "Docker image scanned with policy hits"; exit 1'
 
   stub buildkite-agent \
     'annotate --append --context 'ctx-wiz-docker-warning' --style 'warning' : echo "Annotated Build"'
@@ -313,7 +317,9 @@ teardown() {
   touch "result/output"
 
   stub docker \
-    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan public-registry.wiz.io/wiz-app/wizcli:1 scan dir /scan/iac/to/scan --name 1234-abcd --stdout=human --human-output-file=/scan/result/output : echo "IaC scanned without policy hits"'
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo refreshed' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : echo sha256:scanner" \
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan sha256:scanner scan dir /scan/iac/to/scan --name 1234-abcd --stdout=human --human-output-file=/scan/result/output : echo "IaC scanned without policy hits"'
 
   stub buildkite-agent \
     'annotate --append --context 'ctx-wiz-iac-success' --style 'success' : echo "Annotated Build"' \
@@ -342,7 +348,9 @@ teardown() {
   touch "result/output"
 
   stub docker \
-    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan public-registry.wiz.io/wiz-app/wizcli:1 scan dir /scan/iac/to/scan --name 1234-abcd --stdout=human --human-output-file=/scan/result/output : echo "IaC scanned with policy hits"; exit 1'
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo refreshed' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : echo sha256:scanner" \
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan sha256:scanner scan dir /scan/iac/to/scan --name 1234-abcd --stdout=human --human-output-file=/scan/result/output : echo "IaC scanned with policy hits"; exit 1'
 
   stub buildkite-agent \
     'annotate --append --context 'ctx-wiz-iac-warning' --style 'warning' : echo "Annotated Build"' \
@@ -371,7 +379,9 @@ teardown() {
   touch "result/output"
 
   stub docker \
-    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan public-registry.wiz.io/wiz-app/wizcli:1 scan dir /scan/dir/to/scan --name 1234-abcd --stdout=human --human-output-file=/scan/result/output : echo "Directory scanned without policy hits"'
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo refreshed' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : echo sha256:scanner" \
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan sha256:scanner scan dir /scan/dir/to/scan --name 1234-abcd --stdout=human --human-output-file=/scan/result/output : echo "Directory scanned without policy hits"'
 
   stub buildkite-agent \
     'annotate --append --context 'ctx-wiz-dir-success' --style 'success' : echo "Annotated Build"' \
@@ -400,7 +410,9 @@ teardown() {
   touch "result/output"
 
   stub docker \
-    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan public-registry.wiz.io/wiz-app/wizcli:1 scan dir /scan/dir/to/scan --name 1234-abcd --stdout=human --human-output-file=/scan/result/output : echo "Directory scanned with policy hits"; exit 1'
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo refreshed' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : echo sha256:scanner" \
+    'run --rm -e WIZ_CLIENT_ID -e WIZ_CLIENT_SECRET --mount type=bind,src=/plugin,dst=/scan sha256:scanner scan dir /scan/dir/to/scan --name 1234-abcd --stdout=human --human-output-file=/scan/result/output : echo "Directory scanned with policy hits"; exit 1'
 
   stub buildkite-agent \
     'annotate --append --context 'ctx-wiz-dir-warning' --style 'warning' : echo "Annotated Build"' \
@@ -416,4 +428,87 @@ teardown() {
 
   unstub docker
   unstub buildkite-agent
+}
+
+@test "Docker scan stops when the scanner image cannot be refreshed and is not cached" {
+  stub docker \
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo "Scanner image refresh failed" >&2; exit 17' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : exit 1"
+
+  run docker_image_scan "${WIZ_CLI_CONTAINER}" "ubuntu:latest"
+
+  assert_equal "$status" 1
+  assert_output --partial "Scanner image refresh failed"
+
+  unstub docker
+}
+
+@test "IaC scan stops when the scanner image cannot be refreshed and is not cached" {
+  stub docker \
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo "Scanner image refresh failed" >&2; exit 17' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : exit 1"
+
+  run iac_scan "${WIZ_CLI_CONTAINER}" "iac/to/scan"
+
+  assert_equal "$status" 1
+  assert_output --partial "Scanner image refresh failed"
+
+  unstub docker
+}
+
+@test "Directory scan stops when the scanner image cannot be refreshed and is not cached" {
+  stub docker \
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo "Scanner image refresh failed" >&2; exit 17' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : exit 1"
+
+  run dir_scan "${WIZ_CLI_CONTAINER}" "dir/to/scan"
+
+  assert_equal "$status" 1
+  assert_output --partial "Scanner image refresh failed"
+
+  unstub docker
+}
+
+@test "Get a configured Wiz CLI version tag" {
+  export BUILDKITE_PLUGIN_WIZ_CLI_IMAGE="public-registry.wiz.io/wiz-app/wizcli:1.81.0"
+
+  run detect_wiz_cli_container
+
+  assert_success
+  assert_output "public-registry.wiz.io/wiz-app/wizcli:1.81.0"
+}
+
+@test "Get a configured Wiz CLI digest" {
+  export BUILDKITE_PLUGIN_WIZ_CLI_IMAGE="public-registry.wiz.io/wiz-app/wizcli@sha256:abc123"
+
+  run detect_wiz_cli_container
+
+  assert_success
+  assert_output "public-registry.wiz.io/wiz-app/wizcli@sha256:abc123"
+}
+
+@test "Scanner preparation returns only the image ID on stdout" {
+  stub docker \
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : echo "Pull progress"' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : echo sha256:scanner"
+
+  run bash -c 'source lib/plugin.bash; prepare_wiz_cli_container "$WIZ_CLI_CONTAINER" 2>/dev/null'
+
+  assert_success
+  assert_output "sha256:scanner"
+
+  unstub docker
+}
+
+@test "Scanner preparation fails when inspection returns an empty image ID" {
+  stub docker \
+    'pull public-registry.wiz.io/wiz-app/wizcli:1 : exit 0' \
+    "image inspect --format '{{.Id}}' public-registry.wiz.io/wiz-app/wizcli:1 : exit 0"
+
+  run prepare_wiz_cli_container "$WIZ_CLI_CONTAINER"
+
+  assert_failure
+  assert_output --partial "not available locally; cannot scan"
+
+  unstub docker
 }

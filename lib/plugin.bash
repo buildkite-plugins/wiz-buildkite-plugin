@@ -78,10 +78,27 @@ function build_wiz_cli_args() {
     echo "${args[*]}"
 }
 
-# Return the v1 Wiz CLI container image reference.
-# The v1 image is multi-arch, so no architecture-specific tags are needed.
+# Return the configured scanner image, defaulting to the multi-arch v1 image.
 function detect_wiz_cli_container() {
-    echo "public-registry.wiz.io/wiz-app/wizcli:1"
+    echo "${BUILDKITE_PLUGIN_WIZ_CLI_IMAGE:-public-registry.wiz.io/wiz-app/wizcli:1}"
+}
+
+# Refresh the selected reference and return its local image ID. Keep Docker output
+# on stderr because callers capture stdout to select the image they will run.
+function prepare_wiz_cli_container() {
+    local image="${1}"
+    local image_id
+
+    if ! docker pull "${image}" >&2; then
+        echo "+++ ⚠️ Could not refresh Wiz scanner ${image}; checking the local cache" >&2
+    fi
+
+    if ! image_id=$(docker image inspect --format '{{.Id}}' "${image}") || [[ -z "${image_id}" ]]; then
+        echo "+++ 🚨 Wiz scanner ${image} is not available locally; cannot scan" >&2
+        return 1
+    fi
+
+    printf '%s\n' "${image_id}"
 }
 
 function validate_wiz_client_credentials() {
@@ -137,6 +154,8 @@ function docker_image_scan() {
     shift 2
     local -a cli_args=("${@}")
 
+    wiz_cli_container_image=$(prepare_wiz_cli_container "${wiz_cli_container_image}") || return $?
+
     mkdir -p result
 
     docker pull "$image"
@@ -174,6 +193,8 @@ function iac_scan() {
     shift 2
     local -a cli_args=("${@}")
 
+    wiz_cli_container_image=$(prepare_wiz_cli_container "${wiz_cli_container_image}") || return $?
+
     mkdir -p result
 
     local -i exit_code=0
@@ -207,6 +228,8 @@ function dir_scan() {
     local file_path="${2:-}"
     shift 2
     local -a cli_args=("${@}")
+
+    wiz_cli_container_image=$(prepare_wiz_cli_container "${wiz_cli_container_image}") || return $?
 
     mkdir -p result
 
