@@ -6,6 +6,10 @@ requirements:
   - docker
 configuration:
   properties:
+    cli-image:
+      type: string
+      minLength: 1
+      default: public-registry.wiz.io/wiz-app/wizcli:1
     image-address:
       type: string
     scan-format:

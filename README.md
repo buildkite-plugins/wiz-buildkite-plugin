@@ -19,6 +19,20 @@ And the following environment variables exported in the job (e.g. via an Agent h
 
 Check out [Buildkite's documentation](https://buildkite.com/docs/pipelines/security/secrets/managing) for more information on how to manage secrets in Buildkite.
 
+## Scanner image updates
+
+Before each scan, the plugin tries to pull the selected Wiz CLI image. Docker
+reuses cached layers when they have not changed. If the pull fails, the plugin
+warns and uses the selected image from the local cache if it is available;
+otherwise, the scan stops. A failed refresh can therefore leave an agent using
+an older scanner. The plugin runs the resolved local image ID so another job
+changing the image tag does not change the scanner selected for that scan.
+
+The default image is `public-registry.wiz.io/wiz-app/wizcli:1`, which follows
+Wiz's v1 releases. Set `cli-image` to a version tag to stay on a particular
+release, or to a digest for an immutable pin. Version tags can be changed by the
+vendor. The plugin does not enforce a minimum scanner version.
+
 ## Migrating from v2 to v3
 
 v3 upgrades the underlying Wiz CLI from v0.x to v1.x. WizCLI v0.x reached End of Support on April 15, 2026.
@@ -46,7 +60,7 @@ Add the following to your `pipeline.yml`, the plugin will pull the image, scan i
 steps:
   - command: ls
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'docker'
           image-address: "<image-address-to-pull-and-scan>"
 ```
@@ -63,7 +77,7 @@ steps:
           # Mount cdk.out so it's available for the wiz scan
           volumes:
             - './infrastructure/cdk.out:/app/infrastructure/cdk.out'
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           path: "infrastructure/cdk.out"
 ```
@@ -77,7 +91,7 @@ steps:
   - label: "Scan CloudFormation template file"
     command: ls
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           iac-type: 'Cloudformation'
           path: 'cf-template.yaml'
@@ -95,7 +109,7 @@ steps:
   - label: "Scan Terraform File"
     command: ls *.tf
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
           path: 'main.tf'
@@ -110,7 +124,7 @@ steps:
   - label: "Scan Terraform Files in Directory"
     command: ls my-terraform-dir/*.tf
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
           path: 'my-terraform-dir'
@@ -125,7 +139,7 @@ steps:
   - label: "Scan Terraform Plan"
     command: terraform plan -out plan.tfplan && terraform show -json plan.tfplan | jq -er . > plan.tfplanjson
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'iac'
           iac-type: 'Terraform'
           path: 'plan.tfplanjson'
@@ -140,7 +154,7 @@ steps:
   - label: "Scan Directory"
     command: ls .
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'dir'
           path: 'src'
 ```
@@ -153,7 +167,7 @@ steps:
   - label: "Scan Files in different Directory"
     command: ls my-dir
     plugins:
-      - wiz#v3.0.0:
+      - wiz#v3.2.0:
           scan-type: 'dir'
           path: 'my-dir'
 ```
@@ -168,6 +182,16 @@ The type of resource to be scanned.
 
 Narrow down the scan to specific type.
 Used when `scan-type` is `iac` or `dir`.
+
+### `cli-image` (Optional, string)
+
+The Wiz CLI container image to run. Defaults to
+`public-registry.wiz.io/wiz-app/wizcli:1`.
+
+For example, set `cli-image: public-registry.wiz.io/wiz-app/wizcli:1.81.0` to
+select that release. An image reference with `@sha256:<digest>` pins an exact
+artifact. Custom images must support the Wiz CLI v1 commands used by the plugin.
+This setting selects the scanner, not the container image being scanned.
 
 ### `image-address` (Optional, string)
 
